@@ -8,6 +8,11 @@
     "lint": "echo \"(lint later)\""
   },
   "dependencies": {
-    "@cayh/db": "*"
+    "@cayh/db": "*",
+    "@prisma/client": "^7.4.2",
+    "@vercel/node": "^5.6.11"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2"
   }
 }
