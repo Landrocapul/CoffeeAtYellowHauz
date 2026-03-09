@@ -1,0 +1,19 @@
+{
+  "name": "coffee-yellowhauz-pos",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "npm@10.2.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @cayh/web",
+    "build": "npm run build -w @cayh/web",
+    "lint": "npm run lint -w @cayh/web",
+    "typecheck": "npm run typecheck -w @cayh/web",
+    "db:generate": "npm run db:generate -w @cayh/db",
+    "db:migrate": "npm run db:migrate -w @cayh/db",
+    "db:studio": "npm run db:studio -w @cayh/db"
+  }
+}
