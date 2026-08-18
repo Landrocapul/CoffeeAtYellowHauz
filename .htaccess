@@ -1,0 +1,21 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Keep existing public URLs while serving the reorganized application.
+    RewriteRule ^$ pages/index.php [L]
+    RewriteRule ^index\.php$ pages/index.php [L]
+
+    # Customer-facing site: /customer/, /customer/menu.php, /customer/reservation.php,
+    # /customer/account.php, /customer/login.php all resolve directly to files under
+    # customer/, so no rewriting is needed for those beyond the bare /customer/ root.
+    RewriteRule ^customer/?$ customer/index.php [L]
+
+    # Short public aliases for the customer-facing POST endpoints.
+    RewriteRule ^customer-order\.php$ actions/customer_order.php [L]
+    RewriteRule ^customer-reservation\.php$ actions/customer_reservation.php [L]
+    RewriteRule ^customer-logout\.php$ actions/customer_logout.php [L]
+
+    RewriteRule ^(menu|items|sales|analysis|settings|profile|table|ticket|staff_chatbot)\.php$ pages/$1.php [L]
+    RewriteRule ^api\.php$ actions/api_actions.php [L]
+    RewriteRule ^logout\.php$ actions/logout_actions.php [L]
+</IfModule>

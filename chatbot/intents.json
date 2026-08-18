@@ -1,0 +1,226 @@
+{
+  "intents": [
+    {
+      "tag": "help",
+      "patterns": ["help", "what can you do", "guide me", "staff guide", "how does this chatbot work", "what can I ask"],
+      "keywords": ["help", "guide", "assist", "support", "chatbot", "question", "ask"],
+      "response": "Hi! ☕ I can guide staff through orders, cart changes, discounts, payments, receipts, tables, tickets, stock, menu items, reports, users, and settings ✨ Ask a short question like 'how do I take a dine-in order?' or 'how do I restock an item?'"
+    },
+    {
+      "tag": "take_order",
+      "patterns": ["take order", "new order", "create order", "customer order", "start order", "how do I take an order"],
+      "keywords": ["order", "start", "create", "customer", "menu", "new", "serve"],
+      "response": "Steps to take an order ✅:\n1. Open Menu.\n2. Choose a category and add items to cart.\n3. Adjust quantities in the order panel.\n4. Select order type (Dine In or Take Out).\n5. If Dine In, select the table.\n6. Set payment method and amount received.\n7. Review totals, then complete and print receipt. 🎉"
+    },
+    {
+      "tag": "dine_in_order",
+      "patterns": ["dine in order", "table order", "serve table", "select table", "assign table", "customer will dine in"],
+      "keywords": ["dine", "dinein", "table", "seat", "serve", "occupied", "assign"],
+      "response": "Dine-in flow 🍽️:\n1. Open Menu and add items.\n2. In order panel, choose Dine In.\n3. Select an available table.\n4. Confirm payment method and amount.\n5. Complete order and print receipt.\n6. Table stays occupied until ticket is completed or cancelled."
+    },
+    {
+      "tag": "takeaway_order",
+      "patterns": ["takeaway order", "take away order", "to go order", "pickup order", "customer takeaway", "no table order"],
+      "keywords": ["takeaway", "take", "away", "pickup", "go", "tableless", "carryout"],
+      "response": "Take-out flow 🛍️:\n1. Open Menu and add items.\n2. Choose Take Out in the order panel.\n3. Skip table selection.\n4. Select payment method.\n5. Complete order and print receipt."
+    },
+    {
+      "tag": "cart_quantity",
+      "patterns": ["change quantity", "increase quantity", "decrease quantity", "remove cart item", "clear cart", "wrong item in cart"],
+      "keywords": ["cart", "quantity", "increase", "decrease", "remove", "clear", "wrong"],
+      "response": "Use the plus and minus controls in the cart to adjust quantity. Use the trash action to remove one item, or Clear All to empty the cart. Removed quantities are returned to inventory before checkout."
+    },
+    {
+      "tag": "payments",
+      "patterns": ["process payment", "cash payment", "gcash payment", "card payment", "choose payment", "customer will pay"],
+      "keywords": ["payment", "pay", "cash", "gcash", "card", "paid", "settle"],
+      "response": "Payment steps 💳:\n1. In the order panel, choose Cash, Card, or GCash.\n2. If Cash, enter amount given.\n3. Verify computed change.\n4. Confirm details and complete the order."
+    },
+    {
+      "tag": "cash_change",
+      "patterns": ["calculate change", "cash change", "amount received", "customer gave cash", "enter cash amount", "amount received topic", "how to enter amount received"],
+      "keywords": ["change", "cash", "amount", "received", "tendered", "money", "gave"],
+      "response": "Amount received steps:\n1. Open the bill or payment section.\n2. Choose Cash as payment method.\n3. Enter the exact amount received from customer.\n4. Check the computed change.\n5. Complete order only when total and change are correct."
+    },
+    {
+      "tag": "discounts",
+      "patterns": ["apply discount", "senior discount", "pwd discount", "discount customer", "remove discount", "discount percent"],
+      "keywords": ["discount", "senior", "pwd", "percent", "promo", "less", "deduct"],
+      "response": "Use the discount option during checkout before final payment. Enter or choose the correct discount, review the updated subtotal, tax, and total, then continue with payment."
+    },
+    {
+      "tag": "receipt_printing",
+      "patterns": ["print receipt", "reprint receipt", "print ticket", "customer receipt", "receipt did not print"],
+      "keywords": ["receipt", "print", "printer", "reprint", "paper", "ticket"],
+      "response": "After completing an order, use Print on the receipt screen. To reprint later, open Tickets or Sales Report, view the order details, then use the print action."
+    },
+    {
+      "tag": "tables",
+      "patterns": ["table status", "available table", "occupied table", "reserved table", "table services", "check tables"],
+      "keywords": ["table", "available", "occupied", "reserved", "service", "chair", "status"],
+      "response": "Table Services steps 🪑:\n1. Open Table Services from the sidebar.\n2. Use status and area filters to find a table.\n3. Check table card status (Available, Occupied, Reserved, Cleaning).\n4. Assign available tables during Dine In checkout."
+    },
+    {
+      "tag": "reserve_table_tutorial",
+      "patterns": ["how to reserve a table", "reserve a table", "set table as reserved", "mark table reserved", "table reservation tutorial"],
+      "keywords": ["reserve", "reserved", "table", "tutorial", "mark", "status"],
+      "response": "How to reserve a table:\n1. Open Table Services.\n2. Click the table card you want.\n3. In Table Details, click Reserved.\n4. The table status updates to Reserved."
+    },
+    {
+      "tag": "add_table_tutorial",
+      "patterns": ["how to add a table", "add a table", "new table setup", "create table", "add table tutorial"],
+      "keywords": ["add", "new", "table", "create", "setup", "chairs", "area"],
+      "response": "How to add a table:\n1. Open Table Services.\n2. Click the + button on the top right.\n3. Enter table number, number of chairs, and area.\n4. Click Add Table to save."
+    },
+    {
+      "tag": "release_table",
+      "patterns": ["free table", "release table", "table still occupied", "make table available", "clear occupied table"],
+      "keywords": ["free", "release", "available", "occupied", "clear", "table"],
+      "response": "A dine-in table is released when its ticket is completed or cancelled. If a table still looks occupied, check Tickets for an active order linked to that table."
+    },
+    {
+      "tag": "tickets",
+      "patterns": ["view tickets", "active tickets", "order ticket", "ticket list", "find order status"],
+      "keywords": ["ticket", "tickets", "active", "status", "order", "queue", "processing"],
+      "response": "Tickets steps 🎟️:\n1. Open Tickets from sidebar.\n2. Use filters/search to find an order.\n3. Open ticket details.\n4. Choose action: Print, Complete, or Cancel."
+    },
+    {
+      "tag": "ticket_parts",
+      "patterns": ["ticket parts", "parts of ticket", "what are ticket parts", "explain ticket details", "ticket breakdown"],
+      "keywords": ["ticket", "parts", "details", "breakdown", "order"],
+      "response": "A ticket usually has these parts: header (order number, customer, table/order type, time), items list (item names, quantities, line totals), totals (subtotal, tax, total), payment method, status, and action buttons like Print/Start/Complete/Cancel."
+    },
+    {
+      "tag": "order_panel_controls",
+      "patterns": ["order panel controls", "clear all in order panel", "add subtract item quantity", "delete item in order panel", "how to edit cart quickly"],
+      "keywords": ["order", "panel", "clear", "add", "subtract", "minus", "plus", "delete", "cart"],
+      "response": "In the order panel: use Clear All to remove all items in one action, use + and - to quickly increase or decrease quantity per item, and use the trash icon to delete a single item. These controls help fix orders fast before checkout."
+    },
+    {
+      "tag": "complete_ticket",
+      "patterns": ["complete ticket", "mark order completed", "finish order", "order served", "complete order"],
+      "keywords": ["complete", "completed", "finish", "served", "done", "ticket", "order"],
+      "response": "Complete ticket steps:\n1. Open Tickets.\n2. Select the target order.\n3. Click Complete.\n4. Confirm action.\n5. If dine-in, table is automatically freed."
+    },
+    {
+      "tag": "cancel_ticket",
+      "patterns": ["cancel ticket", "void order", "cancel order", "wrong order", "customer cancelled", "delete order"],
+      "keywords": ["cancel", "cancelled", "void", "wrong", "delete", "remove", "ticket"],
+      "response": "To cancel an order, open Tickets, find the ticket, and choose Cancel. Confirm only after checking with the cashier or manager, because cancelled tickets affect order history and table status."
+    },
+    {
+      "tag": "stock",
+      "patterns": ["check stock", "inventory", "item quantity", "stock count", "available stock", "how many left"],
+      "keywords": ["stock", "inventory", "quantity", "count", "left", "available", "items"],
+      "response": "To add a new item (Admin):\n1. Open Manage Food Items.\n2. Click Add Item.\n3. Enter item name, category, price, and starting quantity.\n4. Add image and description if needed.\n5. Set item as Available.\n6. Save, then confirm the new item appears in the list."
+    },
+    {
+      "tag": "low_stock",
+      "patterns": ["low stock", "stock warning", "low inventory", "bell notification", "out of stock alert"],
+      "keywords": ["low", "stock", "warning", "alert", "bell", "notification", "out"],
+      "response": "The bell on Menu shows low-stock alerts. Open it to review items that need attention, then ask an admin to restock or mark items unavailable if needed."
+    },
+    {
+      "tag": "restock_item",
+      "patterns": ["restock item", "add stock", "update quantity", "increase inventory", "add item quantity"],
+      "keywords": ["restock", "stock", "quantity", "inventory", "add", "increase", "supply"],
+      "response": "Restock steps (Admin) 📦:\n1. Open Manage Food Items.\n2. Locate item (search or filter).\n3. Use +1 / +5 / +10 for quick stock, or open restock modal.\n4. Save changes.\n5. Confirm updated quantity appears."
+    },
+    {
+      "tag": "item_availability",
+      "patterns": ["mark unavailable", "item unavailable", "out of stock item", "hide item", "make item available"],
+      "keywords": ["unavailable", "available", "hide", "show", "out", "stock", "item"],
+      "response": "Admins can edit an item in Manage Food Items and update its availability. Mark items unavailable when they should not appear for sale, then mark them available again after restocking."
+    },
+    {
+      "tag": "menu_management",
+      "patterns": ["manage food items", "add item", "edit item", "archive item", "delete item", "change item price"],
+      "keywords": ["manage", "food", "item", "dish", "add", "edit", "archive", "price"],
+      "response": "Manage Food Items steps (Admin):\n1. Open Manage Food Items.\n2. Add new dish or edit an existing one.\n3. Update price, stock, image, and availability.\n4. Save changes.\n5. Archive old items instead of deleting sales history."
+    },
+    {
+      "tag": "category_management",
+      "patterns": ["add category", "edit category", "delete category", "manage categories", "category icon"],
+      "keywords": ["category", "categories", "icon", "sort", "group", "add", "edit"],
+      "response": "Admins can manage categories from Manage Food Items. Add or edit category names and icons, and only delete a category when it has no menu items assigned."
+    },
+    {
+      "tag": "recommendations",
+      "patterns": ["recommend item", "slow moving item", "suggest item", "what should I recommend", "upsell"],
+      "keywords": ["recommend", "suggest", "upsell", "slow", "moving", "sell", "promote"],
+      "response": "Recommended items are suggested products the system highlights to help staff upsell safely. They are usually items with good stock and strong sales potential. Use them to suggest add-ons or alternatives that match the customer's order."
+    },
+    {
+      "tag": "recommended_items_topic",
+      "patterns": ["recommended items", "what are recommended items", "why recommended items", "recommended items topic"],
+      "keywords": ["recommended", "recommend", "suggested", "upsell"],
+      "response": "Recommended items are suggestions from the POS to help staff offer the best add-ons or alternatives. They are meant to improve customer choices and increase sales while focusing on items that are good to promote."
+    },
+    {
+      "tag": "time_based_menu",
+      "patterns": ["time-based menu", "time based menu", "what is time-based menu", "time menu", "featured now menu"],
+      "keywords": ["time", "menu", "featured", "schedule", "panel"],
+      "response": "The Time-based Menu shows featured items for the current time period, so staff can quickly suggest relevant products. It helps speed up ordering and highlights items that are best promoted right now."
+    },
+    {
+      "tag": "sales_report",
+      "patterns": ["sales report", "view sales", "daily sales", "transactions", "sales filter", "export sales"],
+      "keywords": ["sales", "report", "daily", "transactions", "filter", "export", "revenue"],
+      "response": "Sales Report steps (Admin):\n1. Open Sales Report.\n2. Apply date/filter options.\n3. Review revenue, orders, AOV, and payment mix.\n4. Open transactions for detailed checking."
+    },
+    {
+      "tag": "product_analytics",
+      "patterns": ["product analytics", "best seller", "slow moving", "product performance", "item revenue"],
+      "keywords": ["analytics", "product", "best", "seller", "slow", "performance", "revenue"],
+      "response": "Admins can open Product Analytics to review best sellers, slow-moving items, revenue by product, low stock, and unavailable products."
+    },
+    {
+      "tag": "settings",
+      "patterns": ["store settings", "receipt settings", "tax rate", "business settings", "change settings"],
+      "keywords": ["settings", "store", "receipt", "tax", "business", "rate", "configure"],
+      "response": "Admins can open Settings to update store details, receipt information, tax rate, and user accounts. Review changes carefully because they affect future receipts and calculations."
+    },
+    {
+      "tag": "users",
+      "patterns": ["add staff", "manage users", "add cashier", "deactivate user", "admin account", "cashier account", "add new user", "how to add new user"],
+      "keywords": ["user", "staff", "cashier", "admin", "account", "deactivate", "employee"],
+      "response": "Add new user steps (Admin):\n1. Open Settings.\n2. Go to the Users section.\n3. Click Add User.\n4. Enter employee ID, username, PIN, and full name.\n5. Choose Admin or Cashier role.\n6. Save, then confirm the new account appears in the user list."
+    },
+    {
+      "tag": "profile_password",
+      "patterns": ["change password", "update profile", "my account", "profile settings", "change my name"],
+      "keywords": ["profile", "password", "account", "name", "update", "login", "credentials"],
+      "response": "Open Profile to update your own account details or password. Use a password that staff can remember but customers cannot guess."
+    },
+    {
+      "tag": "login_issue",
+      "patterns": ["cannot login", "forgot password", "wrong password", "login failed", "employee id not working"],
+      "keywords": ["login", "password", "forgot", "failed", "employee", "username", "access"],
+      "response": "If login fails, check the employee ID or username and password first. If it still fails, ask an admin to verify the account in Settings or reset the credentials."
+    },
+    {
+      "tag": "roles_access",
+      "patterns": ["cashier access", "admin access", "why can't I see settings", "missing menu option", "role permission"],
+      "keywords": ["role", "access", "permission", "admin", "cashier", "settings", "missing"],
+      "response": "Some pages are admin-only, including item management, reports, analytics, and settings. Cashiers mainly use Menu, Table Services, Tickets, and Profile."
+    },
+    {
+      "tag": "chatbot_learning",
+      "patterns": ["teach chatbot", "teach the guide", "bot should learn", "save answer", "add chatbot answer"],
+      "keywords": ["teach", "learn", "training", "answer", "chatbot", "guide", "save"],
+      "response": "When I am unsure, use the teaching box to save the correct answer. The lesson is stored in learned_intents.json and will be checked before the built-in answers next time."
+    },
+    {
+      "tag": "python_unavailable",
+      "patterns": ["chatbot unavailable", "python unavailable", "staff guide not working", "bot not responding", "python not installed"],
+      "keywords": ["python", "unavailable", "not", "working", "responding", "installed", "chatbot"],
+      "response": "The staff guide now runs directly in PHP. If it is unavailable, confirm that chatbot/chatbot.php and the intents JSON files are present and readable by Apache."
+    },
+    {
+      "tag": "safe_operations",
+      "patterns": ["what should I check before completing", "avoid mistakes", "wrong payment", "wrong table", "double check order"],
+      "keywords": ["mistake", "wrong", "check", "verify", "before", "complete", "safe"],
+      "response": "Before completing an order, verify the cart items, quantities, order type, table, discount, payment method, amount received, and total. Fix mistakes before printing the receipt."
+    }
+  ]
+}

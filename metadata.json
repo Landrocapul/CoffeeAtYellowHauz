@@ -1,0 +1,6 @@
+{
+  "name": "Coffee at Yellow Hauz",
+  "description": "Café Point-of-Sale (POS), Customer Online Ordering, Table Reservation & Assistant System for Coffee at Yellow Hauz",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
