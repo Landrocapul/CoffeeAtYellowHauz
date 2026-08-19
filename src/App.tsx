@@ -179,6 +179,7 @@ function MainApp() {
                 settings={settings}
                 activeCustomer={activeCustomer}
                 onReservationSuccess={() => refreshAppData()}
+                onRequireLogin={() => setIsCustomerLoginOpen(true)}
               />
             )}
 

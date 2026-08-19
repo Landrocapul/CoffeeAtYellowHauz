@@ -138,28 +138,28 @@ export const PosMenu: React.FC<PosMenuProps> = ({
     const ic = (iconName || '').toLowerCase();
 
     if (ic === 'coffee' || name.includes('hot coffee') || (isDrink && name.includes('coffee') && !name.includes('blended'))) {
-      return <Coffee className="h-4 w-4 shrink-0" />;
+      return <Coffee className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'glasswater' || ic === 'glass' || name.includes('on the rocks')) {
-      return <GlassWater className="h-4 w-4 shrink-0" />;
+      return <GlassWater className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'cupsoda' || name.includes('blended coffee') || name.includes('soda') || name.includes('frappe')) {
-      return <CupSoda className="h-4 w-4 shrink-0" />;
+      return <CupSoda className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'icecream' || name.includes('cream blended') || name.includes('ice cream')) {
-      return <IceCream className="h-4 w-4 shrink-0" />;
+      return <IceCream className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'flame' || name.includes('hot drink') || name.includes('flame')) {
-      return <Flame className="h-4 w-4 shrink-0" />;
+      return <Flame className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'citrus' || name.includes('refresher') || name.includes('citrus') || name.includes('juice')) {
-      return <Citrus className="h-4 w-4 shrink-0" />;
+      return <Citrus className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'milk' || name.includes('milkshake') || name.includes('shake') || name.includes('milk')) {
-      return <Milk className="h-4 w-4 shrink-0" />;
+      return <Milk className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'leaf' || name.includes('milk tea') || name.includes('tea') || name.includes('matcha')) {
-      return <Leaf className="h-4 w-4 shrink-0" />;
+      return <Leaf className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (
       name.includes('drink add-on') ||
@@ -167,32 +167,32 @@ export const PosMenu: React.FC<PosMenuProps> = ({
       name.includes('addon') ||
       name.includes('plus')
     ) {
-      return <Plus className="h-4 w-4 shrink-0" />;
+      return <Plus className="h-4 w-4 shrink-0 stroke-[2.5]" />;
     }
 
     if (ic === 'egg' || name.includes('breakfast') || name.includes('egg')) {
-      return <Egg className="h-4 w-4 shrink-0" />;
+      return <Egg className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'utensils' || name.includes('appetizer')) {
-      return <Utensils className="h-4 w-4 shrink-0" />;
+      return <Utensils className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'soup' || name.includes('meal') || name.includes('soup') || name.includes('rice')) {
-      return <Soup className="h-4 w-4 shrink-0" />;
+      return <Soup className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'cookingpot' || name.includes('pasta') || name.includes('noodle')) {
-      return <CookingPot className="h-4 w-4 shrink-0" />;
+      return <CookingPot className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'pizza' || name.includes('pizza')) {
-      return <Pizza className="h-4 w-4 shrink-0" />;
+      return <Pizza className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'sandwich' || name.includes('sandwich') || name.includes('bread') || name.includes('toast')) {
-      return <Sandwich className="h-4 w-4 shrink-0" />;
+      return <Sandwich className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
     if (ic === 'cake' || name.includes('cake') || name.includes('pastr') || name.includes('dessert') || name.includes('bakery')) {
-      return <Cake className="h-4 w-4 shrink-0" />;
+      return <Cake className="h-4 w-4 shrink-0 stroke-[2.2]" />;
     }
 
-    return isDrink ? <Coffee className="h-4 w-4 shrink-0" /> : <Utensils className="h-4 w-4 shrink-0" />;
+    return isDrink ? <Coffee className="h-4 w-4 shrink-0 stroke-[2.2]" /> : <Utensils className="h-4 w-4 shrink-0 stroke-[2.2]" />;
   };
 
   // Filter Items
@@ -397,10 +397,10 @@ export const PosMenu: React.FC<PosMenuProps> = ({
       {/* Left: Product Catalog with Vertical Categories */}
       <div className="flex rounded-3xl border border-stone-200 bg-white shadow-xs overflow-hidden">
         {/* Vertical Category Navigation on the Left */}
-        <div className="w-40 sm:w-48 lg:w-52 shrink-0 border-r border-stone-200/90 bg-stone-50/70 flex flex-col h-full">
+        <div className="w-44 sm:w-52 lg:w-56 shrink-0 border-r border-stone-200/90 bg-stone-50/70 flex flex-col h-full">
           {/* Segmented Pill Toggle: Drinks vs Food */}
-          <div className="p-2.5 pb-1.5">
-            <div className="grid grid-cols-2 rounded-2xl bg-white p-1 border border-stone-200 shadow-2xs">
+          <div className="p-3 pb-2">
+            <div className="grid grid-cols-2 rounded-full bg-white p-1 border border-stone-200 shadow-2xs">
               <button
                 type="button"
                 onClick={() => {
@@ -410,13 +410,13 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                     setSelectedCategory(firstDrink.id);
                   }
                 }}
-                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-black transition-all duration-150 ${
+                className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-black transition-all duration-150 ${
                   categoryType === 'drinks'
-                    ? 'bg-[#f5b82e] text-stone-950 shadow-xs'
-                    : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'
+                    ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                    : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
                 }`}
               >
-                <Coffee className="h-4 w-4 shrink-0" />
+                <Coffee className="h-4 w-4 shrink-0 stroke-[2.2]" />
                 <span>Drinks</span>
               </button>
 
@@ -429,20 +429,20 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                     setSelectedCategory(firstFood.id);
                   }
                 }}
-                className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-black transition-all duration-150 ${
+                className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-black transition-all duration-150 ${
                   categoryType === 'food'
-                    ? 'bg-[#f5b82e] text-stone-950 shadow-xs'
-                    : 'text-stone-500 hover:text-stone-800 hover:bg-stone-50'
+                    ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                    : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
                 }`}
               >
-                <Utensils className="h-4 w-4 shrink-0" />
+                <Utensils className="h-4 w-4 shrink-0 stroke-[2.2]" />
                 <span>Food</span>
               </button>
             </div>
           </div>
 
           {/* Vertical Category Buttons List */}
-          <div className="flex-1 overflow-y-auto p-2.5 pt-1 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 pt-1 space-y-2">
             {currentCategoriesList.map((cat) => {
               const isSelected = selectedCategory === cat.id;
 
@@ -451,16 +451,16 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`w-full flex items-center gap-2.5 text-left rounded-2xl px-3.5 py-3 text-xs font-extrabold transition-all duration-150 border ${
+                  className={`w-full flex items-center gap-3 text-left rounded-full px-4 py-2.5 sm:py-3 text-xs font-black transition-all duration-150 border ${
                     isSelected
-                      ? 'bg-[#f5b82e] text-stone-950 border-[#f5b82e] shadow-xs'
-                      : 'bg-white text-stone-800 border-stone-200/90 hover:bg-stone-100/80 hover:border-stone-300'
+                      ? 'bg-[#f5a524] text-stone-950 border-[#f5a524] shadow-xs'
+                      : 'bg-white text-stone-900 border-stone-200 hover:bg-stone-50 hover:border-stone-300 shadow-2xs active:scale-[0.98]'
                   }`}
                 >
-                  <span className={isSelected ? 'text-stone-950' : 'text-stone-800'}>
+                  <span className={isSelected ? 'text-stone-950' : 'text-stone-900'}>
                     {renderCategoryIcon(cat.name, categoryType === 'drinks', cat.icon)}
                   </span>
-                  <span className="truncate flex-1 tracking-tight">{cat.name}</span>
+                  <span className="truncate flex-1 tracking-tight font-black">{cat.name}</span>
                 </button>
               );
             })}

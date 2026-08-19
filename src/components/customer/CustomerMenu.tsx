@@ -15,6 +15,20 @@ import {
   Sun,
   Sparkles,
   ArrowRight,
+  Coffee,
+  Utensils,
+  Egg,
+  Soup,
+  Pizza,
+  Sandwich,
+  Cake,
+  GlassWater,
+  IceCream,
+  Citrus,
+  Milk,
+  Leaf,
+  CookingPot,
+  CupSoda,
 } from 'lucide-react';
 
 interface CustomerMenuProps {
@@ -35,6 +49,7 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
   onRequireLogin,
 }) => {
   const { showAlert } = useModal();
+  const [categoryType, setCategoryType] = useState<'drinks' | 'food'>('drinks');
   const [selectedCategory, setSelectedCategory] = useState<number | 'all'>('all');
   const [selectedTemp, setSelectedTemp] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,10 +68,117 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
 
   const tables = useMemo(() => AppStore.getTables(), []);
 
+  // Separate Drinks vs Food categories
+  const isDrinkCategory = (cat: Category) => {
+    const id = cat.id;
+    if (id >= 9 && id <= 17) return true;
+    const n = (cat.name || '').toLowerCase();
+    const icon = (cat.icon || '').toLowerCase();
+    return (
+      icon.includes('coffee') ||
+      icon.includes('drink') ||
+      icon.includes('tea') ||
+      icon.includes('shake') ||
+      icon.includes('glass') ||
+      icon.includes('cup') ||
+      icon.includes('juice') ||
+      icon.includes('refresher') ||
+      n.includes('coffee') ||
+      n.includes('drink') ||
+      n.includes('rocks') ||
+      n.includes('blended') ||
+      n.includes('shake') ||
+      n.includes('tea') ||
+      n.includes('refresher') ||
+      n.includes('beverage')
+    );
+  };
+
+  const drinkCategories = useMemo(() => {
+    return categories.filter((c) => isDrinkCategory(c));
+  }, [categories]);
+
+  const foodCategories = useMemo(() => {
+    return categories.filter((c) => !isDrinkCategory(c));
+  }, [categories]);
+
+  const currentCategoriesList = categoryType === 'drinks' ? drinkCategories : foodCategories;
+
+  // Category Icon resolver matching design
+  const renderCategoryIcon = (categoryName: string, isDrink: boolean, iconName?: string) => {
+    const name = (categoryName || '').toLowerCase();
+    const ic = (iconName || '').toLowerCase();
+
+    if (ic === 'coffee' || name.includes('hot coffee') || (isDrink && name.includes('coffee') && !name.includes('blended'))) {
+      return <Coffee className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'glasswater' || ic === 'glass' || name.includes('on the rocks')) {
+      return <GlassWater className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'cupsoda' || name.includes('blended coffee') || name.includes('soda') || name.includes('frappe')) {
+      return <CupSoda className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'icecream' || name.includes('cream blended') || name.includes('ice cream')) {
+      return <IceCream className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'flame' || name.includes('hot drink') || name.includes('flame')) {
+      return <Flame className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'citrus' || name.includes('refresher') || name.includes('citrus') || name.includes('juice')) {
+      return <Citrus className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'milk' || name.includes('milkshake') || name.includes('shake') || name.includes('milk')) {
+      return <Milk className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'leaf' || name.includes('milk tea') || name.includes('tea') || name.includes('matcha')) {
+      return <Leaf className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (
+      name.includes('drink add-on') ||
+      name.includes('add-on') ||
+      name.includes('addon') ||
+      name.includes('plus')
+    ) {
+      return <Plus className="h-4 w-4 shrink-0 stroke-[2.5]" />;
+    }
+
+    if (ic === 'egg' || name.includes('breakfast') || name.includes('egg')) {
+      return <Egg className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'utensils' || name.includes('appetizer')) {
+      return <Utensils className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'soup' || name.includes('meal') || name.includes('soup') || name.includes('rice')) {
+      return <Soup className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'cookingpot' || name.includes('pasta') || name.includes('noodle')) {
+      return <CookingPot className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'pizza' || name.includes('pizza')) {
+      return <Pizza className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'sandwich' || name.includes('sandwich') || name.includes('bread') || name.includes('toast')) {
+      return <Sandwich className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+    if (ic === 'cake' || name.includes('cake') || name.includes('pastr') || name.includes('dessert') || name.includes('bakery')) {
+      return <Cake className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+    }
+
+    return isDrink ? <Coffee className="h-4 w-4 shrink-0 stroke-[2.2]" /> : <Utensils className="h-4 w-4 shrink-0 stroke-[2.2]" />;
+  };
+
   // Filter items
   const filteredItems = useMemo(() => {
+    const currentListIds = new Set(currentCategoriesList.map((c) => c.id));
+
     return menuItems.filter((item) => {
       if (!item.isAvailable) return false;
+
+      // Filter by drink vs food category set if no explicit search is overriding
+      if (!searchQuery.trim() && !currentListIds.has(item.categoryId)) {
+        return false;
+      }
+
       if (selectedCategory !== 'all' && item.categoryId !== selectedCategory) return false;
       if (selectedTemp !== 'all') {
         if (selectedTemp === 'hot' && !['hot', 'both'].includes(item.temperature)) return false;
@@ -70,7 +192,7 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
       }
       return true;
     });
-  }, [menuItems, selectedCategory, selectedTemp, searchQuery]);
+  }, [menuItems, currentCategoriesList, selectedCategory, selectedTemp, searchQuery]);
 
   // Cart operations
   const addToCart = (item: MenuItem) => {
@@ -229,161 +351,214 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
         </div>
       </div>
 
-      {/* Temperature & Preference Filter Bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-bold text-stone-500 uppercase tracking-wider mr-1">
-          Temp:
-        </span>
-        <button
-          onClick={() => setSelectedTemp('all')}
-          className={`rounded-full px-3.5 py-1 text-xs font-bold transition ${
-            selectedTemp === 'all'
-              ? 'bg-stone-900 text-white'
-              : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
-          }`}
-        >
-          All Items
-        </button>
-        <button
-          onClick={() => setSelectedTemp('hot')}
-          className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold transition ${
-            selectedTemp === 'hot'
-              ? 'bg-orange-600 text-white'
-              : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
-          }`}
-        >
-          <Flame className="h-3.5 w-3.5" />
-          Hot &amp; Warm
-        </button>
-        <button
-          onClick={() => setSelectedTemp('cold')}
-          className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold transition ${
-            selectedTemp === 'cold'
-              ? 'bg-sky-600 text-white'
-              : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
-          }`}
-        >
-          <Snowflake className="h-3.5 w-3.5" />
-          Iced &amp; Blended
-        </button>
-        <button
-          onClick={() => setSelectedTemp('room')}
-          className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold transition ${
-            selectedTemp === 'room'
-              ? 'bg-amber-600 text-white'
-              : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
-          }`}
-        >
-          <Sun className="h-3.5 w-3.5" />
-          Room Temp / Pastry
-        </button>
-      </div>
-
-      {/* Category Pills Slider */}
-      <div className="overflow-x-auto pb-2 flex gap-2 no-scrollbar">
-        <button
-          onClick={() => setSelectedCategory('all')}
-          className={`shrink-0 rounded-xl px-4 py-2 text-xs font-bold transition shadow-2xs ${
-            selectedCategory === 'all'
-              ? 'bg-amber-500 text-stone-950 font-extrabold shadow-sm'
-              : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
-          }`}
-        >
-          ✨ All Categories ({menuItems.filter((i) => i.isAvailable).length})
-        </button>
-        {categories.map((cat) => {
-          const count = menuItems.filter((i) => i.categoryId === cat.id && i.isAvailable).length;
-          return (
+      {/* Main Layout: Vertical Categories on Left, Filter Bar & Menu Items on Right */}
+      <div className="flex flex-col md:flex-row gap-5 items-start">
+        {/* Left: Vertical Categories Sidebar */}
+        <div className="w-full md:w-52 lg:w-56 shrink-0 rounded-3xl border border-stone-200 bg-stone-50/70 p-3 shadow-xs space-y-3">
+          {/* Segmented Pill Toggle: Drinks vs Food */}
+          <div className="grid grid-cols-2 rounded-full bg-white p-1 border border-stone-200 shadow-2xs">
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`shrink-0 flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition shadow-2xs ${
-                selectedCategory === cat.id
-                  ? 'bg-amber-500 text-stone-950 font-extrabold shadow-sm'
-                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-100'
+              type="button"
+              onClick={() => {
+                setCategoryType('drinks');
+                setSelectedCategory('all');
+              }}
+              className={`flex items-center justify-center gap-1.5 rounded-full py-2 px-3 text-xs font-black transition-all duration-150 ${
+                categoryType === 'drinks'
+                  ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                  : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
               }`}
             >
-              <span>{cat.name}</span>
-              <span className="text-[10px] opacity-70">({count})</span>
+              <Coffee className="h-4 w-4 shrink-0 stroke-[2.2]" />
+              <span>Drinks</span>
             </button>
-          );
-        })}
-      </div>
 
-      {/* Menu Grid */}
-      {filteredItems.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center">
-          <p className="font-display text-lg font-bold text-stone-800">No items match your filter</p>
-          <p className="mt-1 text-xs text-stone-500">Try choosing another category or clearing your search.</p>
-          <button
-            onClick={() => {
-              setSelectedCategory('all');
-              setSelectedTemp('all');
-              setSearchQuery('');
-            }}
-            className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-stone-950"
-          >
-            Reset Filters
-          </button>
-        </div>
-      ) : (
-        <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {filteredItems.map((item) => (
-            <div
-              key={item.id}
-              className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs transition hover:shadow-md hover:border-amber-300"
+            <button
+              type="button"
+              onClick={() => {
+                setCategoryType('food');
+                setSelectedCategory('all');
+              }}
+              className={`flex items-center justify-center gap-1.5 rounded-full py-2 px-3 text-xs font-black transition-all duration-150 ${
+                categoryType === 'food'
+                  ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                  : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
+              }`}
             >
-              <div className="relative aspect-16/11 overflow-hidden bg-stone-100">
-                <img
-                  src={item.imageUrl || '/images/latte.webp'}
-                  alt={item.name}
-                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/latte.webp';
-                  }}
-                />
-                <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1">
-                  {item.isBestSeller && (
-                    <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-extrabold uppercase text-stone-950 shadow-xs">
-                      Best Seller
-                    </span>
-                  )}
-                  <span className="rounded-full bg-stone-900/80 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-white uppercase">
-                    {item.temperature}
-                  </span>
-                </div>
-                <div className="absolute bottom-2.5 right-2.5 rounded-xl bg-stone-950/90 px-2.5 py-1 font-mono text-xs font-bold text-amber-400 shadow-xs">
-                  ₱{item.price.toFixed(2)}
-                </div>
-              </div>
+              <Utensils className="h-4 w-4 shrink-0 stroke-[2.2]" />
+              <span>Food</span>
+            </button>
+          </div>
 
-              <div className="flex flex-1 flex-col justify-between p-4">
-                <div>
-                  <h3 className="font-display text-sm sm:text-base font-bold text-stone-900 group-hover:text-amber-800 transition line-clamp-1">
-                    {item.name}
-                  </h3>
-                  <p className="mt-1 text-xs text-stone-600 line-clamp-2 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
+          {/* Vertical Category Buttons List */}
+          <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-0.5">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className={`w-full flex items-center gap-3 text-left rounded-full px-4 py-2.5 sm:py-3 text-xs font-black transition-all duration-150 border ${
+                selectedCategory === 'all'
+                  ? 'bg-[#f5a524] text-stone-950 border-[#f5a524] shadow-xs'
+                  : 'bg-white text-stone-900 border-stone-200 hover:bg-stone-50 hover:border-stone-300 shadow-2xs active:scale-[0.98]'
+              }`}
+            >
+              <Sparkles className="h-4 w-4 shrink-0 stroke-[2.2]" />
+              <span className="truncate flex-1 tracking-tight font-black">
+                All {categoryType === 'drinks' ? 'Drinks' : 'Food'}
+              </span>
+            </button>
 
-                <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-3">
-                  <span className="text-[10px] text-stone-400">
-                    Stock: {item.quantity}
+            {currentCategoriesList.map((cat) => {
+              const isSelected = selectedCategory === cat.id;
+
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`w-full flex items-center gap-3 text-left rounded-full px-4 py-2.5 sm:py-3 text-xs font-black transition-all duration-150 border ${
+                    isSelected
+                      ? 'bg-[#f5a524] text-stone-950 border-[#f5a524] shadow-xs'
+                      : 'bg-white text-stone-900 border-stone-200 hover:bg-stone-50 hover:border-stone-300 shadow-2xs active:scale-[0.98]'
+                  }`}
+                >
+                  <span className={isSelected ? 'text-stone-950' : 'text-stone-900'}>
+                    {renderCategoryIcon(cat.name, categoryType === 'drinks', cat.icon)}
                   </span>
-                  <button
-                    onClick={() => addToCart(item)}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-stone-950 hover:bg-amber-400 transition active:scale-95 shadow-xs"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Add
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+                  <span className="truncate flex-1 tracking-tight font-black">{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      )}
+
+        {/* Right: Temperature Filter & Menu Grid */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Temperature & Preference Filter Bar */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-stone-500 uppercase tracking-wider mr-1">
+              Temp:
+            </span>
+            <button
+              onClick={() => setSelectedTemp('all')}
+              className={`rounded-full px-3.5 py-1 text-xs font-bold transition ${
+                selectedTemp === 'all'
+                  ? 'bg-stone-900 text-white'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              All Items
+            </button>
+            <button
+              onClick={() => setSelectedTemp('hot')}
+              className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold transition ${
+                selectedTemp === 'hot'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              <Flame className="h-3.5 w-3.5" />
+              Hot &amp; Warm
+            </button>
+            <button
+              onClick={() => setSelectedTemp('cold')}
+              className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold transition ${
+                selectedTemp === 'cold'
+                  ? 'bg-sky-600 text-white'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              <Snowflake className="h-3.5 w-3.5" />
+              Iced &amp; Blended
+            </button>
+            <button
+              onClick={() => setSelectedTemp('room')}
+              className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold transition ${
+                selectedTemp === 'room'
+                  ? 'bg-amber-600 text-white'
+                  : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
+              }`}
+            >
+              <Sun className="h-3.5 w-3.5" />
+              Room Temp / Pastry
+            </button>
+          </div>
+
+          {/* Menu Grid */}
+          {filteredItems.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-stone-300 bg-white p-12 text-center">
+              <p className="font-display text-lg font-bold text-stone-800">No items match your filter</p>
+              <p className="mt-1 text-xs text-stone-500">Try choosing another category or clearing your search.</p>
+              <button
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedTemp('all');
+                  setSearchQuery('');
+                }}
+                className="mt-4 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-stone-950"
+              >
+                Reset Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+              {filteredItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="group flex flex-col justify-between overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-xs transition hover:shadow-md hover:border-amber-300"
+                >
+                  <div className="relative aspect-16/11 overflow-hidden bg-stone-100">
+                    <img
+                      src={item.imageUrl || '/images/latte.webp'}
+                      alt={item.name}
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/latte.webp';
+                      }}
+                    />
+                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1">
+                      {item.isBestSeller && (
+                        <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-extrabold uppercase text-stone-950 shadow-xs">
+                          Best Seller
+                        </span>
+                      )}
+                      <span className="rounded-full bg-stone-900/80 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-white uppercase">
+                        {item.temperature}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-2.5 right-2.5 rounded-xl bg-stone-950/90 px-2.5 py-1 font-mono text-xs font-bold text-amber-400 shadow-xs">
+                      ₱{item.price.toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-1 flex-col justify-between p-4">
+                    <div>
+                      <h3 className="font-display text-sm sm:text-base font-bold text-stone-900 group-hover:text-amber-800 transition line-clamp-1">
+                        {item.name}
+                      </h3>
+                      <p className="mt-1 text-xs text-stone-600 line-clamp-2 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-3">
+                      <span className="text-[10px] text-stone-400">
+                        Stock: {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-bold text-stone-950 hover:bg-amber-400 transition active:scale-95 shadow-xs"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Cart Drawer / Slide-Over */}
       {isCartOpen && (

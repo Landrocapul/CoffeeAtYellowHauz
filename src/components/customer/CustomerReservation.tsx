@@ -1,19 +1,34 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Reservation, CustomerAccount, Table, StoreSettings } from '../../types';
 import { AppStore } from '../../services/store';
 import { useModal } from '../../context/ModalContext';
-import { Calendar, Clock, Users, MapPin, CheckCircle, Sparkles, AlertCircle, Phone, User as UserIcon } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  Users,
+  MapPin,
+  CheckCircle,
+  Sparkles,
+  AlertCircle,
+  Phone,
+  User as UserIcon,
+  Lock,
+  ShieldCheck,
+  LogIn,
+} from 'lucide-react';
 
 interface CustomerReservationProps {
   settings: StoreSettings;
   activeCustomer: CustomerAccount | null;
   onReservationSuccess: (res: Reservation) => void;
+  onRequireLogin?: () => void;
 }
 
 export const CustomerReservation: React.FC<CustomerReservationProps> = ({
   settings,
   activeCustomer,
   onReservationSuccess,
+  onRequireLogin,
 }) => {
   const { showAlert } = useModal();
   const tables = useMemo(() => AppStore.getTables(), []);
@@ -33,6 +48,18 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
   const [notes, setNotes] = useState('');
   const [confirmedReservation, setConfirmedReservation] = useState<Reservation | null>(null);
 
+  // Automatically sync customer details if activeCustomer changes
+  useEffect(() => {
+    if (activeCustomer) {
+      if (!customerName || customerName.trim() === '') {
+        setCustomerName(activeCustomer.fullName);
+      }
+      if (!contactNumber || contactNumber.trim() === '') {
+        setContactNumber(activeCustomer.contactNumber || '');
+      }
+    }
+  }, [activeCustomer]);
+
   // Available matching tables
   const availableTables = useMemo(() => {
     return tables.filter((t) => {
@@ -44,6 +71,20 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Mandatory Customer Sign In Check
+    if (!activeCustomer) {
+      showAlert({
+        title: 'Sign In Required',
+        message: 'You must sign in or register a customer account before confirming your table reservation.',
+        type: 'warning',
+      });
+      if (onRequireLogin) {
+        onRequireLogin();
+      }
+      return;
+    }
+
     if (!customerName.trim() || !contactNumber.trim()) {
       showAlert({
         title: 'Information Required',
@@ -67,7 +108,7 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
     const newRes = AppStore.createReservation({
       tableId: Number(selectedTableId),
       tableNumber: tableObj?.tableNumber,
-      customerId: activeCustomer?.id || null,
+      customerId: activeCustomer.id,
       customerName: customerName.trim(),
       contactNumber: contactNumber.trim(),
       guestCount,
@@ -247,32 +288,144 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                  Select Specific Table
+                <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-2">
+                  Choose Table on Floor Plan
                 </label>
-                <select
-                  required
-                  value={selectedTableId}
-                  onChange={(e) => setSelectedTableId(Number(e.target.value))}
-                  className="w-full rounded-xl border border-stone-300 bg-stone-50 px-4 py-2.5 text-xs sm:text-sm text-stone-900 focus:border-amber-500 focus:outline-none"
-                >
-                  <option value="">-- Choose Table ({availableTables.length} available) --</option>
-                  {availableTables.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      Table #{t.tableNumber} ({t.area === 'airconditioned' ? 'Airconditioned' : 'Main Area'}, Capacity: {t.capacity} seats)
-                    </option>
-                  ))}
-                </select>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 bg-[#f7f7f7] rounded-2xl border border-stone-200/90 max-h-64 overflow-y-auto">
+                  {availableTables.map((t) => {
+                    const isSelected = selectedTableId === t.id;
+                    const isOccupied = t.status === 'occupied';
+                    const isReserved = t.status === 'reserved';
+
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setSelectedTableId(t.id)}
+                        className={`relative p-3 rounded-2xl border-2 text-left transition-all duration-150 flex flex-col justify-between ${
+                          isSelected
+                            ? 'bg-amber-100/80 border-amber-500 shadow-xs ring-2 ring-amber-500/20'
+                            : isReserved
+                            ? 'bg-[#fef9c3] border-[#facc15] hover:border-amber-400'
+                            : isOccupied
+                            ? 'bg-stone-900 border-stone-700 text-white'
+                            : 'bg-white border-stone-200 hover:border-stone-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span
+                            className={`grid h-7 w-7 place-items-center rounded-full text-xs font-black ${
+                              isSelected
+                                ? 'bg-amber-500 text-stone-950'
+                                : isReserved
+                                ? 'bg-[#facc15] text-stone-950'
+                                : isOccupied
+                                ? 'bg-[#f5a524] text-stone-950'
+                                : 'bg-stone-100 text-stone-700'
+                            }`}
+                          >
+                            T{t.tableNumber}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                              isOccupied
+                                ? 'bg-stone-800 text-stone-300'
+                                : 'bg-stone-100 text-stone-600'
+                            }`}
+                          >
+                            {t.capacity} Seats
+                          </span>
+                        </div>
+
+                        <div className="mt-2 text-[10px] font-semibold truncate">
+                          <span
+                            className={
+                              isOccupied
+                                ? 'text-stone-300'
+                                : isSelected
+                                ? 'text-amber-900 font-bold'
+                                : 'text-stone-600'
+                            }
+                          >
+                            {t.area === 'airconditioned' ? '❄️ AC Room' : '🌿 Main Dining'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <h3 className="font-display text-lg font-bold text-stone-900 border-b border-stone-100 pb-3 pt-3">
-                2. Contact Information
-              </h3>
+              <div className="pt-2">
+                <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+                  <h3 className="font-display text-lg font-bold text-stone-900">
+                    2. Customer Account &amp; Contact
+                  </h3>
+                  {activeCustomer ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      Signed In
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
+                      <Lock className="h-3 w-3" />
+                      Sign In Required
+                    </span>
+                  )}
+                </div>
+
+                {!activeCustomer ? (
+                  <div className="mt-3 rounded-2xl border border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="grid h-9 w-9 place-items-center rounded-xl bg-amber-500 text-stone-950 shrink-0 shadow-xs">
+                          <Lock className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wide">
+                            Sign In Mandatory for Reservations
+                          </h4>
+                          <p className="text-xs text-stone-600 mt-0.5 leading-relaxed">
+                            Please sign in or create an account to confirm and secure your table booking.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={onRequireLogin}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-xs font-black text-stone-950 shadow-xs hover:bg-amber-400 active:scale-95 transition shrink-0"
+                      >
+                        <LogIn className="h-4 w-4" />
+                        Sign In / Register
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="grid h-8 w-8 place-items-center rounded-full bg-emerald-200 text-emerald-900 font-bold text-xs">
+                        {activeCustomer.fullName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="text-xs">
+                        <span className="font-bold text-stone-900 block">{activeCustomer.fullName}</span>
+                        <span className="text-stone-500">{activeCustomer.email || activeCustomer.contactNumber}</span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onRequireLogin}
+                      className="text-[11px] font-bold text-stone-600 hover:text-stone-900 underline"
+                    >
+                      Switch Account
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Full Name
+                    Full Name {activeCustomer && <span className="text-emerald-600">*</span>}
                   </label>
                   <div className="relative">
                     <UserIcon className="absolute left-3.5 top-2.5 h-4 w-4 text-stone-400" />
@@ -289,7 +442,7 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">
-                    Phone Number
+                    Phone Number {activeCustomer && <span className="text-emerald-600">*</span>}
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-2.5 h-4 w-4 text-stone-400" />
@@ -318,12 +471,31 @@ export const CustomerReservation: React.FC<CustomerReservationProps> = ({
                 />
               </div>
 
-              <button
-                type="submit"
-                className="w-full rounded-xl bg-amber-500 py-3 text-sm font-extrabold text-stone-950 shadow-md hover:bg-amber-400 transition"
-              >
-                Confirm &amp; Book Table
-              </button>
+              {activeCustomer ? (
+                <button
+                  type="submit"
+                  className="w-full rounded-xl bg-amber-500 py-3.5 text-sm font-extrabold text-stone-950 shadow-md hover:bg-amber-400 active:scale-[0.99] transition flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  Confirm &amp; Book Table
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    showAlert({
+                      title: 'Sign In Required',
+                      message: 'Please sign in or register to complete and confirm your table reservation.',
+                      type: 'warning',
+                    });
+                    if (onRequireLogin) onRequireLogin();
+                  }}
+                  className="w-full rounded-xl bg-stone-900 py-3.5 text-sm font-extrabold text-amber-400 shadow-md hover:bg-stone-800 active:scale-[0.99] transition flex items-center justify-center gap-2"
+                >
+                  <Lock className="h-4 w-4 text-amber-400" />
+                  Sign In to Confirm Reservation
+                </button>
+              )}
             </form>
           </div>
 
