@@ -6,7 +6,11 @@ export interface User {
   name?: string;
   role: 'cashier' | 'admin';
   status: 'active' | 'inactive';
+  pin?: string;
+  phone?: string;
+  email?: string;
   lastLogin?: string;
+  createdAt?: string;
 }
 
 export interface Category {

@@ -60,6 +60,31 @@ export const TableManagement: React.FC<TableManagementProps> = ({
   const [isNewResModalOpen, setIsNewResModalOpen] = useState(false);
   const [isAddTableModalOpen, setIsAddTableModalOpen] = useState(false);
 
+  // New table form state
+  const [newTableForm, setNewTableForm] = useState<{
+    tableNumber: number;
+    capacity: number;
+    area: 'normal' | 'airconditioned';
+    status: Table['status'];
+  }>({
+    tableNumber: 1,
+    capacity: 4,
+    area: 'normal',
+    status: 'available',
+  });
+
+  // Edit table state inside details modal
+  const [isEditingTable, setIsEditingTable] = useState(false);
+  const [editTableForm, setEditTableForm] = useState<{
+    tableNumber: number;
+    capacity: number;
+    area: 'normal' | 'airconditioned';
+  }>({
+    tableNumber: 1,
+    capacity: 4,
+    area: 'normal',
+  });
+
   // New reservation form state for staff manual entry
   const [newResForm, setNewResForm] = useState({
     customerName: '',
@@ -91,6 +116,146 @@ export const TableManagement: React.FC<TableManagementProps> = ({
       if (updatedSelected) {
         setSelectedTableForDetails(updatedSelected);
       }
+    }
+  };
+
+  const handleOpenAddTableModal = () => {
+    const highestNum = tables.length ? Math.max(...tables.map((t) => t.tableNumber)) : 0;
+    setNewTableForm({
+      tableNumber: highestNum + 1,
+      capacity: 4,
+      area: areaFilter !== 'all' ? areaFilter : 'normal',
+      status: 'available',
+    });
+    setIsAddTableModalOpen(true);
+  };
+
+  const handleAddTableSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const tableNum = Number(newTableForm.tableNumber);
+    if (!tableNum || tableNum <= 0) {
+      showAlert({
+        title: 'Invalid Table Number',
+        message: 'Please provide a valid positive table number.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    // Check if table number already exists
+    if (tables.some((t) => t.tableNumber === tableNum)) {
+      showAlert({
+        title: 'Duplicate Table Number',
+        message: `Table #${tableNum} already exists on the floor plan. Please use a different table number.`,
+        type: 'warning',
+      });
+      return;
+    }
+
+    const created = AppStore.addTable({
+      tableNumber: tableNum,
+      capacity: Number(newTableForm.capacity) || 4,
+      area: newTableForm.area,
+      status: newTableForm.status,
+    });
+
+    refreshData();
+    setIsAddTableModalOpen(false);
+
+    showAlert({
+      title: 'Table Added Successfully',
+      message: `Table #${created.tableNumber} (${created.capacity} seats, ${
+        created.area === 'airconditioned' ? 'Airconditioned Room' : 'Normal / Main Area'
+      }) has been added to the floor plan.`,
+      type: 'success',
+    });
+  };
+
+  const handleDeleteTable = async (table: Table) => {
+    if (table.status === 'occupied') {
+      showAlert({
+        title: 'Table Currently Occupied',
+        message: `Table #${table.tableNumber} is currently occupied. Please clear the table before removing it.`,
+        type: 'warning',
+      });
+      return;
+    }
+
+    const activeRes = getTableActiveReservation(table.id);
+    if (activeRes) {
+      showAlert({
+        title: 'Active Reservation Exists',
+        message: `Table #${table.tableNumber} has an active booking for ${activeRes.customerName}. Please cancel or complete the reservation before deleting the table.`,
+        type: 'warning',
+      });
+      return;
+    }
+
+    const confirmed = await showConfirm({
+      title: `Delete Table #${table.tableNumber}?`,
+      message: `Are you sure you want to remove Table #${table.tableNumber} (${table.capacity} seats) from the floor plan? This will also remove it from customer online reservations.`,
+      type: 'danger',
+      confirmText: 'Delete Table',
+      cancelText: 'Keep Table',
+    });
+
+    if (confirmed) {
+      AppStore.deleteTable(table.id);
+      setSelectedTableForDetails(null);
+      refreshData();
+      showAlert({
+        title: 'Table Removed',
+        message: `Table #${table.tableNumber} was removed from the floor plan.`,
+        type: 'info',
+      });
+    }
+  };
+
+  const handleStartEditingTable = (table: Table) => {
+    setEditTableForm({
+      tableNumber: table.tableNumber,
+      capacity: table.capacity,
+      area: table.area,
+    });
+    setIsEditingTable(true);
+  };
+
+  const handleUpdateTableSubmit = (e: React.FormEvent, table: Table) => {
+    e.preventDefault();
+    const tableNum = Number(editTableForm.tableNumber);
+    if (!tableNum || tableNum <= 0) {
+      showAlert({
+        title: 'Invalid Table Number',
+        message: 'Please provide a valid positive table number.',
+        type: 'warning',
+      });
+      return;
+    }
+
+    if (tableNum !== table.tableNumber && tables.some((t) => t.tableNumber === tableNum && t.id !== table.id)) {
+      showAlert({
+        title: 'Duplicate Table Number',
+        message: `Table #${tableNum} already exists. Please choose a different number.`,
+        type: 'warning',
+      });
+      return;
+    }
+
+    const updated = AppStore.updateTable(table.id, {
+      tableNumber: tableNum,
+      capacity: Number(editTableForm.capacity) || 4,
+      area: editTableForm.area,
+    });
+
+    if (updated) {
+      setSelectedTableForDetails(updated);
+      setIsEditingTable(false);
+      refreshData();
+      showAlert({
+        title: 'Table Updated',
+        message: `Table #${updated.tableNumber} details updated successfully.`,
+        type: 'success',
+      });
     }
   };
 
@@ -495,15 +660,25 @@ export const TableManagement: React.FC<TableManagementProps> = ({
           </div>
         </div>
 
-        {/* Right Action: Add (+) Button */}
-        <div className="flex items-center gap-2">
+        {/* Right Actions: Add Table & New Booking */}
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleOpenAddTableModal}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-3.5 py-2 text-xs font-black text-stone-950 hover:bg-amber-400 transition active:scale-95 shadow-xs"
+          >
+            <Plus className="h-4 w-4 stroke-[3]" />
+            <span>Add Table</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setIsNewResModalOpen(true)}
             title="Book New Reservation"
-            className="grid h-10 w-10 place-items-center rounded-xl bg-stone-950 text-amber-400 hover:bg-stone-800 transition active:scale-95 shadow-xs"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-stone-950 px-3.5 py-2 text-xs font-bold text-amber-400 hover:bg-stone-800 transition active:scale-95 shadow-xs"
           >
-            <Plus className="h-5 w-5 stroke-[2.5]" />
+            <Calendar className="h-4 w-4" />
+            <span className="hidden sm:inline">New Booking</span>
           </button>
         </div>
       </div>
@@ -511,8 +686,16 @@ export const TableManagement: React.FC<TableManagementProps> = ({
       {/* Floor Plan Canvas */}
       <div className="rounded-3xl border border-stone-200/80 bg-[#f7f7f7] p-6 sm:p-10 shadow-inner min-h-[520px]">
         {filteredTables.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 bg-white/80 p-12 text-center text-xs text-stone-500">
-            No tables match the selected status or area filter.
+          <div className="rounded-2xl border border-dashed border-stone-300 bg-white/80 p-12 text-center text-xs text-stone-500 space-y-3">
+            <p>No tables match the selected status or area filter.</p>
+            <button
+              type="button"
+              onClick={handleOpenAddTableModal}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-amber-500 px-4 py-2 text-xs font-bold text-stone-950 hover:bg-amber-400"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Table to Floor Plan
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-12 justify-items-center items-center">
@@ -558,14 +741,136 @@ export const TableManagement: React.FC<TableManagementProps> = ({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setSelectedTableForDetails(null)}
-                className="rounded-full p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-1">
+                {!isEditingTable && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditingTable(selectedTableForDetails)}
+                      title="Edit Table Configuration"
+                      className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTable(selectedTableForDetails)}
+                      title="Delete Table"
+                      className="rounded-full p-2 text-stone-400 hover:bg-rose-50 hover:text-rose-600 transition"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTableForDetails(null);
+                    setIsEditingTable(false);
+                  }}
+                  className="rounded-full p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
+
+            {/* Inline Table Configuration Edit Form */}
+            {isEditingTable ? (
+              <form
+                onSubmit={(e) => handleUpdateTableSubmit(e, selectedTableForDetails)}
+                className="rounded-2xl bg-stone-50 border border-stone-200 p-4 space-y-3 text-xs"
+              >
+                <div className="flex items-center justify-between border-b border-stone-200 pb-2">
+                  <span className="font-bold text-stone-900 uppercase tracking-wider">
+                    Edit Table Settings
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingTable(false)}
+                    className="text-stone-500 hover:text-stone-800 underline"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-stone-700 block mb-1">Table Number</label>
+                    <input
+                      type="number"
+                      min={1}
+                      required
+                      value={editTableForm.tableNumber}
+                      onChange={(e) =>
+                        setEditTableForm({ ...editTableForm, tableNumber: Number(e.target.value) })
+                      }
+                      className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-stone-900 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-stone-700 block mb-1">Seats Capacity</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={30}
+                      required
+                      value={editTableForm.capacity}
+                      onChange={(e) =>
+                        setEditTableForm({ ...editTableForm, capacity: Number(e.target.value) })
+                      }
+                      className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-stone-900 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-stone-700 block mb-1">Dining Area</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditTableForm({ ...editTableForm, area: 'normal' })}
+                      className={`p-2 rounded-xl border text-center font-bold transition ${
+                        editTableForm.area === 'normal'
+                          ? 'border-amber-500 bg-amber-50 text-amber-900'
+                          : 'border-stone-200 bg-white text-stone-600'
+                      }`}
+                    >
+                      🌿 Main / Normal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditTableForm({ ...editTableForm, area: 'airconditioned' })
+                      }
+                      className={`p-2 rounded-xl border text-center font-bold transition ${
+                        editTableForm.area === 'airconditioned'
+                          ? 'border-sky-500 bg-sky-50 text-sky-900'
+                          : 'border-stone-200 bg-white text-stone-600'
+                      }`}
+                    >
+                      ❄️ Airconditioned
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingTable(false)}
+                    className="px-3 py-1.5 rounded-xl border border-stone-200 text-stone-600 hover:bg-white font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-1.5 rounded-xl bg-amber-500 text-stone-950 font-bold hover:bg-amber-400 shadow-xs"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            ) : null}
 
             {/* Quick Status Pill Selector */}
             <div className="space-y-1.5">
@@ -1060,6 +1365,194 @@ export const TableManagement: React.FC<TableManagementProps> = ({
                   className="rounded-xl bg-amber-500 px-4 py-2 font-extrabold text-stone-950 hover:bg-amber-400 transition shadow-xs"
                 >
                   Confirm &amp; Reserve Table
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Table Modal */}
+      {isAddTableModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl space-y-4 border border-stone-200 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500 text-stone-950 font-black">
+                  <Plus className="h-5 w-5 stroke-[2.5]" />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-extrabold text-stone-900">
+                    Add New Table
+                  </h3>
+                  <p className="text-xs text-stone-500">Configure table layout for floor plan</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddTableModalOpen(false)}
+                className="rounded-full p-1.5 text-stone-400 hover:bg-stone-100 transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddTableSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-stone-700 block mb-1">
+                  Table Number *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 font-bold text-stone-400">
+                    Table #
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={999}
+                    required
+                    value={newTableForm.tableNumber}
+                    onChange={(e) =>
+                      setNewTableForm({
+                        ...newTableForm,
+                        tableNumber: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className="w-full rounded-xl border border-stone-300 bg-white py-2 pl-18 pr-3 text-sm font-bold text-stone-900 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+                <p className="text-[11px] text-stone-400 mt-1">
+                  Suggested sequential number is Table #{newTableForm.tableNumber}
+                </p>
+              </div>
+
+              <div>
+                <label className="font-bold text-stone-700 block mb-1.5">
+                  Seating Capacity *
+                </label>
+                <div className="grid grid-cols-4 gap-1.5 mb-2">
+                  {[2, 4, 6, 8].map((cap) => (
+                    <button
+                      key={cap}
+                      type="button"
+                      onClick={() => setNewTableForm({ ...newTableForm, capacity: cap })}
+                      className={`py-2 rounded-xl text-xs font-bold border transition ${
+                        newTableForm.capacity === cap
+                          ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-xs'
+                          : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
+                      }`}
+                    >
+                      {cap} Guests
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-stone-500">Custom count:</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={newTableForm.capacity}
+                    onChange={(e) =>
+                      setNewTableForm({
+                        ...newTableForm,
+                        capacity: parseInt(e.target.value) || 1,
+                      })
+                    }
+                    className="w-24 rounded-xl border border-stone-300 bg-white px-3 py-1.5 text-xs font-bold text-stone-900 focus:border-amber-500 focus:outline-none"
+                  />
+                  <span className="text-[11px] text-stone-500">seats</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-stone-700 block mb-1.5">
+                  Dining Area *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewTableForm({ ...newTableForm, area: 'normal' })}
+                    className={`p-3 rounded-2xl border text-left transition flex items-center gap-2.5 ${
+                      newTableForm.area === 'normal'
+                        ? 'border-amber-500 bg-amber-50/70 ring-2 ring-amber-500/20'
+                        : 'border-stone-200 bg-stone-50 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span className="text-xl">🌿</span>
+                    <div>
+                      <span className="font-bold text-stone-900 block text-xs">
+                        Main Dining
+                      </span>
+                      <span className="text-[10px] text-stone-500">Standard / Normal</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setNewTableForm({ ...newTableForm, area: 'airconditioned' })
+                    }
+                    className={`p-3 rounded-2xl border text-left transition flex items-center gap-2.5 ${
+                      newTableForm.area === 'airconditioned'
+                        ? 'border-sky-500 bg-sky-50/70 ring-2 ring-sky-500/20'
+                        : 'border-stone-200 bg-stone-50 hover:bg-stone-100'
+                    }`}
+                  >
+                    <span className="text-xl">❄️</span>
+                    <div>
+                      <span className="font-bold text-stone-900 block text-xs">
+                        AC Room
+                      </span>
+                      <span className="text-[10px] text-stone-500">Airconditioned</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-bold text-stone-700 block mb-1.5">
+                  Initial Status
+                </label>
+                <div className="grid grid-cols-4 gap-1.5 rounded-2xl bg-stone-100 p-1">
+                  {(['available', 'occupied', 'reserved', 'cleaning'] as Table['status'][]).map(
+                    (st) => (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setNewTableForm({ ...newTableForm, status: st })}
+                        className={`rounded-xl py-1.5 text-xs font-bold capitalize transition ${
+                          newTableForm.status === st
+                            ? st === 'available'
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : st === 'occupied'
+                              ? 'bg-stone-900 text-amber-400 shadow-xs'
+                              : st === 'reserved'
+                              ? 'bg-[#f5a524] text-stone-950 shadow-xs font-black'
+                              : 'bg-sky-600 text-white shadow-xs'
+                            : 'text-stone-600 hover:text-stone-900 hover:bg-white/60'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    )
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-end gap-2 pt-3 border-t border-stone-100">
+                <button
+                  type="button"
+                  onClick={() => setIsAddTableModalOpen(false)}
+                  className="rounded-xl border border-stone-200 px-4 py-2 font-bold text-stone-600 hover:bg-stone-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-amber-500 px-4 py-2 font-extrabold text-stone-950 hover:bg-amber-400 transition shadow-xs"
+                >
+                  Create &amp; Place Table
                 </button>
               </div>
             </form>

@@ -25,6 +25,7 @@ import { InventoryManager } from './components/pos/InventoryManager';
 import { SettingsManager } from './components/pos/SettingsManager';
 import { ReceiptModal } from './components/ReceiptModal';
 import { ChatbotModal } from './components/ChatbotModal';
+import { LowStockNotificationModal } from './components/pos/LowStockNotificationModal';
 import { Footer } from './components/Footer';
 import { Bot, Coffee } from 'lucide-react';
 import { ModalProvider } from './context/ModalContext';
@@ -60,6 +61,7 @@ function MainApp() {
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<Order | null>(null);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [isCustomerLoginOpen, setIsCustomerLoginOpen] = useState(false);
+  const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
 
   // Navigation Pin & Visibility state
   const [isNavPinned, setIsNavPinned] = useState<boolean>(() => {
@@ -144,6 +146,7 @@ function MainApp() {
         onTogglePin={handleToggleNavPin}
         isNavVisible={isNavVisible}
         onSetNavVisible={setIsNavVisible}
+        onOpenLowStockModal={() => setIsLowStockModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -237,7 +240,9 @@ function MainApp() {
                 {staffTab === 'settings' && (
                   <SettingsManager
                     settings={settings}
+                    activeStaff={activeStaff}
                     onUpdateSettings={(newSet) => setSettings(newSet)}
+                    onRefreshStaff={() => refreshAppData()}
                   />
                 )}
               </>
@@ -279,6 +284,21 @@ function MainApp() {
           onSuccess={(c) => {
             setActiveCustomer(c);
             setCustomerTab('account');
+          }}
+        />
+      )}
+
+      {/* In-App Low Stock Notification Modal for Cashier & Admin */}
+      {isLowStockModalOpen && (
+        <LowStockNotificationModal
+          isOpen={isLowStockModalOpen}
+          onClose={() => setIsLowStockModalOpen(false)}
+          categories={categories}
+          activeStaff={activeStaff}
+          onNavigateToInventory={() => {
+            setIsLowStockModalOpen(false);
+            setAppMode('staff');
+            setStaffTab('inventory');
           }}
         />
       )}

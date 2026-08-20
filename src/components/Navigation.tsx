@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, CustomerAccount } from '../types';
+import { AppStore } from '../services/store';
 import {
   Coffee,
   ShoppingBag,
@@ -21,6 +22,8 @@ import {
   ChevronDown,
   Eye,
   EyeOff,
+  Bell,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface NavigationProps {
@@ -40,6 +43,7 @@ interface NavigationProps {
   onTogglePin: () => void;
   isNavVisible: boolean;
   onSetNavVisible: (visible: boolean) => void;
+  onOpenLowStockModal?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
@@ -59,8 +63,19 @@ export const Navigation: React.FC<NavigationProps> = ({
   onTogglePin,
   isNavVisible,
   onSetNavVisible,
+  onOpenLowStockModal,
 }) => {
   const [isHoverPeek, setIsHoverPeek] = useState(false);
+  const [lowStockCount, setLowStockCount] = useState<number>(() => {
+    return AppStore.getLowStockItems(5).length;
+  });
+
+  useEffect(() => {
+    const unsub = AppStore.subscribe(() => {
+      setLowStockCount(AppStore.getLowStockItems(5).length);
+    });
+    return () => unsub();
+  }, []);
 
   const shouldShowFullNav = isPinned || isNavVisible || isHoverPeek;
 
@@ -95,7 +110,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className="fixed top-2.5 right-4 z-40 flex items-center gap-1.5 rounded-full bg-stone-900/95 text-white shadow-xl backdrop-blur-md px-3 py-1.5 border border-stone-700/80 animate-in fade-in slide-in-from-top-2 duration-200">
           <button
             onClick={() => onSetNavVisible(true)}
-            className="flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition"
+            className="flex items-center gap-1.5 text-xs font-bold text-amber-400 hover:text-amber-300 transition cursor-pointer"
             title="Expand Navigation Bar"
           >
             <Coffee className="h-4 w-4" />
@@ -107,12 +122,24 @@ export const Navigation: React.FC<NavigationProps> = ({
             <ChevronDown className="h-3.5 w-3.5 text-stone-400" />
           </button>
 
+          {/* In-App Low Stock Alert button in compact mode for Cashier/Admin */}
+          {(activeStaff || appMode === 'staff') && lowStockCount > 0 && (
+            <button
+              onClick={onOpenLowStockModal}
+              className="relative flex items-center gap-1 rounded-full bg-rose-500/20 border border-rose-500/40 px-2 py-1 text-[10px] font-extrabold text-rose-300 hover:bg-rose-500/30 transition cursor-pointer"
+              title={`${lowStockCount} items have low stock`}
+            >
+              <Bell className="h-3 w-3 animate-bounce" />
+              <span>{lowStockCount}</span>
+            </button>
+          )}
+
           <div className="h-3.5 w-px bg-stone-700 mx-1" />
 
           {/* Quick Chatbot */}
           <button
             onClick={onOpenChatbot}
-            className="rounded-full p-1 text-amber-400 hover:bg-stone-800 transition"
+            className="rounded-full p-1 text-amber-400 hover:bg-stone-800 transition cursor-pointer"
             title="AI Assistant"
           >
             <Bot className="h-3.5 w-3.5" />
@@ -124,7 +151,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               onTogglePin();
               onSetNavVisible(true);
             }}
-            className="flex items-center gap-1 rounded-full bg-amber-500 text-stone-950 px-2.5 py-1 text-[11px] font-extrabold hover:bg-amber-400 shadow-xs transition"
+            className="flex items-center gap-1 rounded-full bg-amber-500 text-stone-950 px-2.5 py-1 text-[11px] font-extrabold hover:bg-amber-400 shadow-xs transition cursor-pointer"
             title="Pin Navigation Bar to keep it permanently visible"
           >
             <Pin className="h-3 w-3 fill-stone-950" />
@@ -202,11 +229,23 @@ export const Navigation: React.FC<NavigationProps> = ({
               {/* Chatbot Assistant */}
               <button
                 onClick={onOpenChatbot}
-                className="flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 text-[11px] font-bold text-amber-300 hover:bg-amber-500/30 transition"
+                className="flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 text-[11px] font-bold text-amber-300 hover:bg-amber-500/30 transition cursor-pointer"
               >
                 <Bot className="h-3.5 w-3.5" />
                 <span className="hidden lg:inline">Assistant</span>
               </button>
+
+              {/* Low Stock Alerts in Top Banner for Cashier / Admin */}
+              {(activeStaff || appMode === 'staff') && lowStockCount > 0 && (
+                <button
+                  onClick={onOpenLowStockModal}
+                  className="flex items-center gap-1 rounded-full bg-rose-600/30 border border-rose-500/60 px-2.5 py-1 text-[11px] font-bold text-rose-200 hover:bg-rose-600/40 transition cursor-pointer"
+                  title="Low Stock In-App Alerts"
+                >
+                  <Bell className="h-3 w-3 text-rose-300 animate-bounce" />
+                  <span>{lowStockCount} Low Stock</span>
+                </button>
+              )}
 
               <div className="h-4 w-px bg-stone-700 hidden sm:block" />
 
@@ -357,7 +396,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                     </button>
                     <button
                       onClick={() => onSetStaffTab('inventory')}
-                      className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                      className={`relative flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
                         staffTab === 'inventory'
                           ? 'bg-amber-500 text-stone-950 font-extrabold shadow-2xs'
                           : 'text-stone-700 hover:bg-stone-100'
@@ -365,11 +404,16 @@ export const Navigation: React.FC<NavigationProps> = ({
                     >
                       <Package className="h-3.5 w-3.5" />
                       <span>Inventory</span>
+                      {lowStockCount > 0 && (
+                        <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[9px] font-black text-white">
+                          {lowStockCount}
+                        </span>
+                      )}
                     </button>
                     {activeStaff.role === 'admin' && (
                       <button
                         onClick={() => onSetStaffTab('settings')}
-                        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition ${
+                        className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition cursor-pointer ${
                           staffTab === 'settings'
                             ? 'bg-amber-500 text-stone-950 font-extrabold shadow-2xs'
                             : 'text-stone-700 hover:bg-stone-100'
@@ -419,12 +463,32 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </div>
               ) : activeStaff ? (
                 <div className="flex items-center gap-2">
+                  {/* Low Stock Alerts Notification Bell for Cashier and Admin */}
+                  <button
+                    type="button"
+                    onClick={onOpenLowStockModal}
+                    className={`relative flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition cursor-pointer border ${
+                      lowStockCount > 0
+                        ? 'bg-rose-50 border-rose-300 text-rose-900 hover:bg-rose-100 shadow-2xs'
+                        : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                    }`}
+                    title="View Low Stock In-App Alerts"
+                  >
+                    <Bell className={`h-3.5 w-3.5 ${lowStockCount > 0 ? 'text-rose-600' : 'text-stone-500'}`} />
+                    <span className="hidden md:inline">Alerts</span>
+                    {lowStockCount > 0 && (
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-600 px-1 text-[10px] font-black text-white animate-pulse">
+                        {lowStockCount}
+                      </span>
+                    )}
+                  </button>
+
                   <span className="hidden sm:inline-block rounded-md bg-stone-100 px-2 py-0.5 text-[10px] font-extrabold uppercase text-stone-600">
                     {activeStaff.role || 'Staff'} • {(activeStaff.fullName || activeStaff.name || 'Staff').split(' ')[0]}
                   </span>
                   <button
                     onClick={onStaffLogout}
-                    className="flex items-center gap-1 rounded-xl border border-stone-200 px-2.5 py-1.5 text-xs font-bold text-stone-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition"
+                    className="flex items-center gap-1 rounded-xl border border-stone-200 px-2.5 py-1.5 text-xs font-bold text-stone-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition cursor-pointer"
                   >
                     <LogOut className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Lock</span>

@@ -377,7 +377,13 @@ export class AppStore {
       // 7. Listen to Users
       onSnapshot(collection(db, 'users'), (snapshot) => {
         if (!snapshot.empty) {
-          const users = snapshot.docs.map((doc) => doc.data() as User);
+          const users = snapshot.docs.map((doc) => {
+            const u = doc.data() as User;
+            if (u.fullName === 'System Administrator') {
+              u.fullName = 'Admin';
+            }
+            return u;
+          });
           setStored(STORAGE_KEYS.USERS, users);
           this.notify();
         } else {
@@ -544,6 +550,55 @@ export class AppStore {
     return false;
   }
 
+  // Low Stock Helpers
+  static getLowStockItems(threshold: number = 5): MenuItem[] {
+    const items = this.getMenuItems();
+    return items.filter((item) => item.quantity <= threshold);
+  }
+
+  static quickRestockItem(id: number, addQuantity: number): MenuItem | null {
+    const items = this.getMenuItems();
+    const idx = items.findIndex((i) => i.id === id);
+    if (idx === -1) return null;
+
+    const newQty = Math.max(0, (items[idx].quantity || 0) + addQuantity);
+    const updates: Partial<MenuItem> = {
+      quantity: newQty,
+      isAvailable: newQty > 0 ? true : items[idx].isAvailable,
+    };
+
+    items[idx] = { ...items[idx], ...updates };
+    this.saveMenuItems(items);
+
+    // Sync to Firestore
+    updateDoc(doc(db, 'menu_items', String(id)), cleanForFirestore(updates)).catch(() => {
+      setDoc(doc(db, 'menu_items', String(id)), cleanForFirestore(items[idx])).catch(() => {});
+    });
+
+    return items[idx];
+  }
+
+  static batchRestockLowStock(threshold: number = 5, addAmount: number = 10): number {
+    const items = this.getMenuItems();
+    let updatedCount = 0;
+    items.forEach((item) => {
+      if (item.quantity <= threshold) {
+        item.quantity += addAmount;
+        item.isAvailable = true;
+        updatedCount++;
+        updateDoc(doc(db, 'menu_items', String(item.id)), {
+          quantity: item.quantity,
+          isAvailable: true,
+        }).catch(() => {});
+      }
+    });
+
+    if (updatedCount > 0) {
+      this.saveMenuItems(items);
+    }
+    return updatedCount;
+  }
+
   // Floor plan tables
   static getTables(): Table[] {
     return getStored<Table[]>(STORAGE_KEYS.TABLES, SEED_TABLES);
@@ -552,6 +607,56 @@ export class AppStore {
   static saveTables(tables: Table[]): void {
     setStored(STORAGE_KEYS.TABLES, tables);
     this.notify();
+  }
+
+  static addTable(tableData: Omit<Table, 'id'>): Table {
+    const tables = this.getTables();
+    const newId = tables.length ? Math.max(...tables.map((t) => t.id)) + 1 : 1;
+    const newTable: Table = {
+      ...tableData,
+      id: newId,
+    };
+    tables.push(newTable);
+    tables.sort((a, b) => a.tableNumber - b.tableNumber);
+    this.saveTables(tables);
+
+    // Sync to Firestore
+    setDoc(doc(db, 'tables', String(newTable.id)), cleanForFirestore(newTable)).catch((e) =>
+      console.error('Firestore add table error:', e)
+    );
+
+    return newTable;
+  }
+
+  static updateTable(id: number, updates: Partial<Table>): Table | null {
+    const tables = this.getTables();
+    const idx = tables.findIndex((t) => t.id === id);
+    if (idx === -1) return null;
+
+    tables[idx] = { ...tables[idx], ...updates };
+    tables.sort((a, b) => a.tableNumber - b.tableNumber);
+    this.saveTables(tables);
+
+    // Sync to Firestore
+    setDoc(doc(db, 'tables', String(id)), cleanForFirestore(tables[idx])).catch((e) =>
+      console.error('Firestore update table error:', e)
+    );
+
+    return tables[idx];
+  }
+
+  static deleteTable(id: number): boolean {
+    let tables = this.getTables();
+    const prevLen = tables.length;
+    tables = tables.filter((t) => t.id !== id);
+    if (tables.length !== prevLen) {
+      this.saveTables(tables);
+      deleteDoc(doc(db, 'tables', String(id))).catch((e) =>
+        console.error('Firestore delete table error:', e)
+      );
+      return true;
+    }
+    return false;
   }
 
   static updateTableStatus(tableId: number, status: Table['status'], orderId?: number | null): Table | null {
@@ -585,7 +690,10 @@ export class AppStore {
 
   // Orders
   static getOrders(): Order[] {
-    return getStored<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    const list = getStored<Order[]>(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
+    return list.map((o) =>
+      o.cashierName === 'System Administrator' ? { ...o, cashierName: 'Admin' } : o
+    );
   }
 
   static saveOrders(orders: Order[]): void {
@@ -774,11 +882,115 @@ export class AppStore {
 
   // Users and Auth State
   static getUsers(): User[] {
-    return getStored<User[]>(STORAGE_KEYS.USERS, SEED_USERS);
+    const list = getStored<User[]>(STORAGE_KEYS.USERS, SEED_USERS);
+    return list.map((u) => {
+      let updated = u;
+      if (u.fullName === 'System Administrator') {
+        updated = { ...updated, fullName: 'Admin' };
+      }
+      // Ensure fallback PINs if missing
+      if (!updated.pin) {
+        updated = { ...updated, pin: updated.role === 'admin' ? '1234' : '0000' };
+      }
+      return updated;
+    });
+  }
+
+  static saveUsers(users: User[]): void {
+    setStored(STORAGE_KEYS.USERS, users);
+    this.notify();
+    users.forEach((u) => {
+      setDoc(doc(db, 'users', String(u.id)), cleanForFirestore(u)).catch(() => {});
+    });
+  }
+
+  static createUser(userData: Omit<User, 'id'>): User {
+    const users = this.getUsers();
+    const nextId = users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
+    const newUser: User = {
+      id: nextId,
+      ...userData,
+      pin: userData.pin || (userData.role === 'admin' ? '1234' : '0000'),
+      createdAt: userData.createdAt || new Date().toISOString(),
+    };
+    const updatedUsers = [...users, newUser];
+    this.saveUsers(updatedUsers);
+    return newUser;
+  }
+
+  static updateUser(id: number, updates: Partial<User>): User | null {
+    const users = this.getUsers();
+    const index = users.findIndex((u) => u.id === id);
+    if (index === -1) return null;
+
+    const updatedUser: User = { ...users[index], ...updates };
+    users[index] = updatedUser;
+    this.saveUsers(users);
+
+    // If the updated user is the currently active staff, update active staff state too
+    const currentActive = this.getActiveStaff();
+    if (currentActive && currentActive.id === id) {
+      this.setActiveStaff(updatedUser);
+    }
+
+    return updatedUser;
+  }
+
+  static deleteUser(id: number): boolean {
+    const users = this.getUsers();
+    const userToDelete = users.find((u) => u.id === id);
+    if (!userToDelete) return false;
+
+    // Safety guard: Cannot delete if it's the only admin
+    const adminCount = users.filter((u) => u.role === 'admin' && u.status === 'active').length;
+    if (userToDelete.role === 'admin' && adminCount <= 1) {
+      return false;
+    }
+
+    const filtered = users.filter((u) => u.id !== id);
+    setStored(STORAGE_KEYS.USERS, filtered);
+    this.notify();
+
+    deleteDoc(doc(db, 'users', String(id))).catch(() => {});
+
+    // If deleting current active staff, log them out
+    const currentActive = this.getActiveStaff();
+    if (currentActive && currentActive.id === id) {
+      this.setActiveStaff(null);
+    }
+
+    return true;
+  }
+
+  static resetUserPin(id: number, newPin: string): boolean {
+    if (!/^\d{4}$/.test(newPin)) return false;
+    const res = this.updateUser(id, { pin: newPin });
+    return res !== null;
+  }
+
+  static toggleUserStatus(id: number): User | null {
+    const users = this.getUsers();
+    const target = users.find((u) => u.id === id);
+    if (!target) return null;
+
+    const nextStatus = target.status === 'active' ? 'inactive' : 'active';
+    // Prevent deactivating the only admin
+    if (target.role === 'admin' && target.status === 'active') {
+      const activeAdmins = users.filter((u) => u.role === 'admin' && u.status === 'active').length;
+      if (activeAdmins <= 1) {
+        return null;
+      }
+    }
+
+    return this.updateUser(id, { status: nextStatus });
   }
 
   static getActiveStaff(): User | null {
-    return getStored<User | null>(STORAGE_KEYS.ACTIVE_STAFF, null);
+    const staff = getStored<User | null>(STORAGE_KEYS.ACTIVE_STAFF, null);
+    if (staff && staff.fullName === 'System Administrator') {
+      return { ...staff, fullName: 'Admin' };
+    }
+    return staff;
   }
 
   static setActiveStaff(user: User | null): void {

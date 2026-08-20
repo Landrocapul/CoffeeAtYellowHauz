@@ -18,6 +18,14 @@ import {
   RotateCcw,
   ArrowRight,
   Check,
+  UserCheck,
+  Users,
+  User,
+  ShieldCheck,
+  Award,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 
 interface SalesReportsProps {
@@ -45,15 +53,66 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
   const [startDate, setStartDate] = useState<string>(todayStr);
   const [endDate, setEndDate] = useState<string>(todayStr);
 
-  // Channel & Dining Type Filters
+  // Channel, Dining Type & Cashier Filters
   const [channelFilter, setChannelFilter] = useState<'all' | 'in_store' | 'online'>('all');
   const [filterType, setFilterType] = useState<'all' | 'dine_in' | 'take_away' | 'delivery'>('all');
+  const [cashierFilter, setCashierFilter] = useState<string>('all');
+
+  // Table Column Sorting State
+  type SortField =
+    | 'receipt'
+    | 'cashier'
+    | 'channel'
+    | 'date'
+    | 'guest'
+    | 'payment'
+    | 'subtotal'
+    | 'tax'
+    | 'total';
+  type SortDirection = 'asc' | 'desc';
+
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      if (['date', 'total', 'subtotal', 'tax'].includes(field)) {
+        setSortDirection('desc');
+      } else {
+        setSortDirection('asc');
+      }
+    }
+  };
 
   const completedOrders = useMemo(() => {
     return orders.filter((o) => o.status === 'completed');
   }, [orders]);
 
-  // Apply Date Filter + Channel Filter + Dining Type Filter
+  // Unique list of Cashiers for Filter
+  const cashierOptions = useMemo(() => {
+    const map = new Map<string, { name: string; role?: string }>();
+    
+    // From users database
+    AppStore.getUsers().forEach((u) => {
+      const name = u.fullName || u.username;
+      map.set(name, { name, role: u.role });
+    });
+
+    // From actual completed orders
+    completedOrders.forEach((o) => {
+      const name = o.cashierName || 'Staff Member';
+      if (!map.has(name)) {
+        map.set(name, { name, role: name.includes('Online') ? 'online' : 'staff' });
+      }
+    });
+
+    return Array.from(map.values());
+  }, [completedOrders]);
+
+  // Apply Date Filter + Channel Filter + Dining Type Filter + Cashier Filter
   const filteredOrders = useMemo(() => {
     return completedOrders.filter((o) => {
       // 1. Channel Filter
@@ -63,7 +122,13 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
       // 2. Dining Type Filter
       if (filterType !== 'all' && o.orderType !== filterType) return false;
 
-      // 3. Date Filter
+      // 3. Cashier Filter
+      if (cashierFilter !== 'all') {
+        const orderCashier = o.cashierName || 'Staff Member';
+        if (orderCashier.toLowerCase() !== cashierFilter.toLowerCase()) return false;
+      }
+
+      // 4. Date Filter
       if (datePreset === 'all') return true;
 
       const orderTime = new Date(o.createdAt).getTime();
@@ -117,7 +182,7 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
 
       return true;
     });
-  }, [completedOrders, channelFilter, filterType, datePreset, startDate, endDate, todayStr]);
+  }, [completedOrders, channelFilter, filterType, cashierFilter, datePreset, startDate, endDate, todayStr]);
 
   // Aggregate Metrics
   const grossSales = useMemo(() => {
@@ -178,6 +243,53 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
     [filteredOrders]
   );
 
+  // Cashier Performance Breakdown
+  const cashierBreakdown = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        cashierName: string;
+        orderCount: number;
+        subtotal: number;
+        taxAmount: number;
+        discountAmount: number;
+        totalRevenue: number;
+        cashTotal: number;
+        gcashTotal: number;
+        cardTotal: number;
+      }
+    >();
+
+    for (const o of filteredOrders) {
+      const name = o.cashierName || 'Staff Member';
+      const curr = map.get(name) || {
+        cashierName: name,
+        orderCount: 0,
+        subtotal: 0,
+        taxAmount: 0,
+        discountAmount: 0,
+        totalRevenue: 0,
+        cashTotal: 0,
+        gcashTotal: 0,
+        cardTotal: 0,
+      };
+
+      curr.orderCount += 1;
+      curr.subtotal += o.subtotal;
+      curr.taxAmount += o.taxAmount;
+      curr.discountAmount += o.discountAmount;
+      curr.totalRevenue += o.totalAmount;
+
+      if (o.paymentMethod === 'cash') curr.cashTotal += o.totalAmount;
+      else if (o.paymentMethod === 'gcash') curr.gcashTotal += o.totalAmount;
+      else if (o.paymentMethod === 'card') curr.cardTotal += o.totalAmount;
+
+      map.set(name, curr);
+    }
+
+    return Array.from(map.values()).sort((a, b) => b.totalRevenue - a.totalRevenue);
+  }, [filteredOrders]);
+
   // Formatted date period label
   const periodLabel = useMemo(() => {
     if (datePreset === 'today') return `Today (${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })})`;
@@ -209,10 +321,66 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
     return 'Selected Period';
   }, [datePreset, startDate, endDate]);
 
+  // Sorted Transactions based on active column and direction
+  const sortedOrders = useMemo(() => {
+    const list = [...filteredOrders];
+    return list.sort((a, b) => {
+      let result = 0;
+      switch (sortField) {
+        case 'receipt':
+          result = (a.orderNumber || '').localeCompare(b.orderNumber || '', undefined, { numeric: true });
+          break;
+        case 'cashier': {
+          const nameA = a.cashierName || 'Staff Member';
+          const nameB = b.cashierName || 'Staff Member';
+          result = nameA.localeCompare(nameB);
+          break;
+        }
+        case 'channel': {
+          const chA = AppStore.getOrderChannel(a);
+          const chB = AppStore.getOrderChannel(b);
+          result = chA.localeCompare(chB);
+          break;
+        }
+        case 'date': {
+          const timeA = new Date(a.createdAt).getTime() || 0;
+          const timeB = new Date(b.createdAt).getTime() || 0;
+          result = timeA - timeB;
+          break;
+        }
+        case 'guest': {
+          const guestA = `${a.customerName || ''} ${a.orderType || ''}`.trim();
+          const guestB = `${b.customerName || ''} ${b.orderType || ''}`.trim();
+          result = guestA.localeCompare(guestB);
+          break;
+        }
+        case 'payment': {
+          const payA = a.paymentMethod || '';
+          const payB = b.paymentMethod || '';
+          result = payA.localeCompare(payB);
+          break;
+        }
+        case 'subtotal':
+          result = a.subtotal - b.subtotal;
+          break;
+        case 'tax':
+          result = a.taxAmount - b.taxAmount;
+          break;
+        case 'total':
+          result = a.totalAmount - b.totalAmount;
+          break;
+        default:
+          result = 0;
+      }
+      return sortDirection === 'asc' ? result : -result;
+    });
+  }, [filteredOrders, sortField, sortDirection]);
+
   const handleExportCSV = () => {
     if (filteredOrders.length === 0) return;
     const headers = [
       'Order #',
+      'Cashier / Server',
       'Channel',
       'Date',
       'Time',
@@ -229,6 +397,7 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
       const d = new Date(o.createdAt);
       return [
         o.orderNumber,
+        `"${o.cashierName || 'Staff Member'}"`,
         AppStore.getOrderChannel(o),
         d.toLocaleDateString(),
         d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -406,8 +575,8 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
         )}
       </div>
 
-      {/* Channel Segment Filter */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-stone-100 p-1.5 border border-stone-200">
+      {/* Channel & Cashier Filter Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-stone-100 p-2 border border-stone-200">
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             onClick={() => setChannelFilter('all')}
@@ -444,21 +613,41 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
           </button>
         </div>
 
-        {/* Dining Type filter */}
-        <div className="flex items-center gap-1">
-          {(['all', 'dine_in', 'take_away', 'delivery'] as const).map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilterType(type)}
-              className={`rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize transition ${
-                filterType === type
-                  ? 'bg-amber-500 text-stone-950 font-extrabold'
-                  : 'bg-white text-stone-600 hover:bg-stone-50'
-              }`}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Cashier Filter Dropdown */}
+          <div className="flex items-center gap-1.5 bg-white border border-stone-200 rounded-xl px-2.5 py-1 shadow-2xs">
+            <UserCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+            <span className="text-[11px] font-bold text-stone-500">Cashier:</span>
+            <select
+              value={cashierFilter}
+              onChange={(e) => setCashierFilter(e.target.value)}
+              className="text-xs font-bold text-stone-900 bg-transparent focus:outline-none cursor-pointer pr-1"
             >
-              {type.replace('_', ' ')}
-            </button>
-          ))}
+              <option value="all">All Cashiers / Servers</option>
+              {cashierOptions.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name} {c.role === 'admin' ? '(Admin)' : c.role === 'cashier' ? '(Cashier)' : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Dining Type filter */}
+          <div className="flex items-center gap-1">
+            {(['all', 'dine_in', 'take_away', 'delivery'] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilterType(type)}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize transition ${
+                  filterType === type
+                    ? 'bg-amber-500 text-stone-950 font-extrabold shadow-2xs'
+                    : 'bg-white text-stone-600 hover:bg-stone-50'
+                }`}
+              >
+                {type.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -466,7 +655,7 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-3xl border border-stone-200 bg-white p-5 shadow-xs">
           <span className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
-            Net Revenue ({channelFilter.replace('_', ' ')})
+            Net Revenue {cashierFilter !== 'all' ? `(${cashierFilter})` : `(${channelFilter.replace('_', ' ')})`}
           </span>
           <div className="mt-2 font-display text-2xl font-extrabold text-amber-900 font-mono">
             ₱{netRevenue.toFixed(2)}
@@ -505,6 +694,118 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
           </div>
           <p className="mt-1 text-[11px] text-stone-500">Senior, PWD &amp; Promotional</p>
         </div>
+      </div>
+
+      {/* Cashier Performance & Shift Audit Section */}
+      <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-amber-700">
+                Staff Audit
+              </span>
+            </div>
+            <h3 className="font-display text-base font-bold text-stone-900 flex items-center gap-2">
+              <Users className="h-4 w-4 text-amber-600" />
+              Cashier Performance &amp; Orders Taken
+            </h3>
+            <p className="text-xs text-stone-500 mt-0.5">
+              Breakdown of settled transactions, collected revenue, and tender handled per staff member.
+            </p>
+          </div>
+          <div className="text-xs text-stone-500">
+            <span className="font-bold text-stone-900">{cashierBreakdown.length}</span> cashier account(s) active in period
+          </div>
+        </div>
+
+        {cashierBreakdown.length === 0 ? (
+          <div className="py-6 text-center text-xs text-stone-400">
+            No cashier activity recorded for this period.
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {cashierBreakdown.map((cb, idx) => {
+              const isSelected = cashierFilter.toLowerCase() === cb.cashierName.toLowerCase();
+              const isOnline = cb.cashierName.includes('Online');
+              const pctOfNet = netRevenue > 0 ? Math.round((cb.totalRevenue / netRevenue) * 100) : 0;
+
+              return (
+                <div
+                  key={cb.cashierName}
+                  onClick={() => {
+                    setCashierFilter((prev) => (prev.toLowerCase() === cb.cashierName.toLowerCase() ? 'all' : cb.cashierName));
+                  }}
+                  className={`cursor-pointer rounded-2xl border p-4 transition-all ${
+                    isSelected
+                      ? 'border-amber-500 bg-amber-50/70 shadow-sm ring-1 ring-amber-400'
+                      : 'border-stone-200 bg-stone-50/50 hover:bg-stone-100/70 hover:border-stone-300'
+                  }`}
+                  title="Click to filter transactions by this cashier"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`grid h-9 w-9 place-items-center rounded-xl font-bold text-xs ${
+                          isOnline
+                            ? 'bg-indigo-100 text-indigo-800'
+                            : 'bg-amber-100 text-amber-900'
+                        }`}
+                      >
+                        {isOnline ? <Globe className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-stone-900 text-xs flex items-center gap-1.5">
+                          <span>{cb.cashierName}</span>
+                          {idx === 0 && (
+                            <span className="inline-flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.2 text-[9px] font-extrabold text-amber-900">
+                              <Award className="h-2.5 w-2.5" /> Top
+                            </span>
+                          )}
+                        </h4>
+                        <span className="text-[10px] text-stone-400 uppercase font-semibold">
+                          {isOnline ? 'Digital Channel' : 'POS Register'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="font-mono text-sm font-extrabold text-stone-900">
+                        ₱{cb.totalRevenue.toFixed(2)}
+                      </span>
+                      <div className="text-[10px] text-stone-500 font-medium">
+                        {pctOfNet}% of sales
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cashier Metrics Summary */}
+                  <div className="mt-3 pt-3 border-t border-stone-200/70 grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-lg bg-white p-1.5 border border-stone-200/60">
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Orders</span>
+                      <span className="text-xs font-mono font-bold text-stone-800">{cb.orderCount}</span>
+                    </div>
+                    <div className="rounded-lg bg-white p-1.5 border border-stone-200/60">
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Cash</span>
+                      <span className="text-xs font-mono font-bold text-stone-800">₱{cb.cashTotal.toFixed(0)}</span>
+                    </div>
+                    <div className="rounded-lg bg-white p-1.5 border border-stone-200/60">
+                      <span className="text-[10px] text-stone-400 uppercase font-bold block">Digital</span>
+                      <span className="text-xs font-mono font-bold text-stone-800">
+                        ₱{(cb.gcashTotal + cb.cardTotal).toFixed(0)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isSelected && (
+                    <div className="mt-2 text-center text-[10px] font-bold text-amber-800">
+                      ✓ Filtering table by this cashier (click to clear)
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Payment Methods Split */}
@@ -554,6 +855,17 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
             </h3>
             <p className="text-xs text-stone-500 mt-0.5">
               Filtered for <span className="font-semibold text-stone-800">{periodLabel}</span>
+              {cashierFilter !== 'all' && (
+                <span className="ml-1.5 inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900">
+                  <UserCheck className="h-3 w-3" /> Cashier: {cashierFilter}
+                  <button
+                    onClick={() => setCashierFilter('all')}
+                    className="ml-1 hover:text-amber-950 font-black"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
             </p>
           </div>
           <span className="text-xs font-mono font-bold bg-stone-100 px-2.5 py-1 rounded-lg text-stone-600">
@@ -565,37 +877,243 @@ export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewRece
           <table className="w-full text-left text-xs">
             <thead className="bg-stone-50 border-b border-stone-200 text-stone-500 font-bold uppercase text-[10px]">
               <tr>
-                <th className="px-5 py-3">Receipt #</th>
-                <th className="px-5 py-3">Channel</th>
-                <th className="px-5 py-3">Date / Time</th>
-                <th className="px-5 py-3">Guest &amp; Type</th>
-                <th className="px-5 py-3">Payment</th>
-                <th className="px-5 py-3 text-right">Subtotal</th>
-                <th className="px-5 py-3 text-right">VAT</th>
-                <th className="px-5 py-3 text-right">Total</th>
-                <th className="px-5 py-3 text-center">Action</th>
+                {/* Receipt # */}
+                <th
+                  onClick={() => handleSort('receipt')}
+                  className="px-5 py-3 cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Receipt Number"
+                >
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className={sortField === 'receipt' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Receipt #
+                    </span>
+                    {sortField === 'receipt' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* Cashier / Staff */}
+                <th
+                  onClick={() => handleSort('cashier')}
+                  className="px-5 py-3 cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Cashier / Staff Name"
+                >
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className={sortField === 'cashier' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Cashier / Staff
+                    </span>
+                    {sortField === 'cashier' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* Channel */}
+                <th
+                  onClick={() => handleSort('channel')}
+                  className="px-5 py-3 cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Channel"
+                >
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className={sortField === 'channel' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Channel
+                    </span>
+                    {sortField === 'channel' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* Date / Time */}
+                <th
+                  onClick={() => handleSort('date')}
+                  className="px-5 py-3 cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Date / Time"
+                >
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className={sortField === 'date' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Date / Time
+                    </span>
+                    {sortField === 'date' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* Guest & Type */}
+                <th
+                  onClick={() => handleSort('guest')}
+                  className="px-5 py-3 cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Guest & Order Type"
+                >
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className={sortField === 'guest' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Guest &amp; Type
+                    </span>
+                    {sortField === 'guest' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* Payment */}
+                <th
+                  onClick={() => handleSort('payment')}
+                  className="px-5 py-3 cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Payment Method"
+                >
+                  <div className="inline-flex items-center gap-1.5">
+                    <span className={sortField === 'payment' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Payment
+                    </span>
+                    {sortField === 'payment' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* Subtotal */}
+                <th
+                  onClick={() => handleSort('subtotal')}
+                  className="px-5 py-3 text-right cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Subtotal Amount"
+                >
+                  <div className="inline-flex items-center justify-end w-full gap-1.5">
+                    <span className={sortField === 'subtotal' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Subtotal
+                    </span>
+                    {sortField === 'subtotal' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* VAT */}
+                <th
+                  onClick={() => handleSort('tax')}
+                  className="px-5 py-3 text-right cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by VAT Tax Amount"
+                >
+                  <div className="inline-flex items-center justify-end w-full gap-1.5">
+                    <span className={sortField === 'tax' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      VAT
+                    </span>
+                    {sortField === 'tax' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                {/* Total */}
+                <th
+                  onClick={() => handleSort('total')}
+                  className="px-5 py-3 text-right cursor-pointer select-none group transition hover:bg-stone-100/80"
+                  title="Sort by Total Net Amount"
+                >
+                  <div className="inline-flex items-center justify-end w-full gap-1.5">
+                    <span className={sortField === 'total' ? 'text-amber-900 font-extrabold' : 'text-stone-600 group-hover:text-stone-900'}>
+                      Total
+                    </span>
+                    {sortField === 'total' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowUp className="h-3 w-3 text-amber-600 font-bold" />
+                      ) : (
+                        <ArrowDown className="h-3 w-3 text-amber-600 font-bold" />
+                      )
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 text-stone-300 opacity-60 group-hover:opacity-100 group-hover:text-stone-500 transition-opacity" />
+                    )}
+                  </div>
+                </th>
+
+                <th className="px-5 py-3 text-center text-stone-400">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 font-medium">
-              {filteredOrders.length === 0 ? (
+              {sortedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-5 py-12 text-center text-stone-400">
+                  <td colSpan={10} className="px-5 py-12 text-center text-stone-400">
                     <Calendar className="h-8 w-8 mx-auto mb-2 text-stone-300" />
                     <p className="font-bold text-stone-600">No transactions found</p>
                     <p className="text-[11px] text-stone-400 mt-0.5">
-                      No settled orders found for the selected date period ({periodLabel}).
+                      No settled orders found for the selected filter criteria ({periodLabel}).
                     </p>
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((ord) => {
+                sortedOrders.map((ord) => {
                   const ch = AppStore.getOrderChannel(ord);
                   const isOnline = ch === 'online';
                   const orderDate = new Date(ord.createdAt);
+                  const isOnlineCashier = (ord.cashierName || '').includes('Online');
 
                   return (
                     <tr key={ord.id} className="hover:bg-stone-50/70 transition">
                       <td className="px-5 py-3.5 font-mono font-bold text-stone-900">{ord.orderNumber}</td>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-1.5 font-bold text-stone-900">
+                          {isOnlineCashier ? (
+                            <Globe className="h-3.5 w-3.5 text-indigo-600 shrink-0" />
+                          ) : (
+                            <UserCheck className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                          )}
+                          <span className="truncate max-w-[140px]">{ord.cashierName || 'Staff Member'}</span>
+                        </div>
+                        {ord.cashierId && (
+                          <div className="text-[10px] text-stone-400 font-mono">
+                            ID #{ord.cashierId}
+                          </div>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5">
                         <span
                           className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-extrabold uppercase ${

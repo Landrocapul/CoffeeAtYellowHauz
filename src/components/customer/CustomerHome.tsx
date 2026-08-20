@@ -1,6 +1,7 @@
 import React from 'react';
 import { MenuItem, StoreSettings } from '../../types';
-import { ShoppingBag, Calendar, Clock, Utensils, Heart, Sparkles, ArrowRight, ShieldCheck, MapPin, Phone } from 'lucide-react';
+import { ShoppingBag, Calendar, Clock, Utensils, Heart, Sparkles, ArrowRight, ShieldCheck, MapPin, Phone, Images } from 'lucide-react';
+import { LandingGallery } from './LandingGallery';
 
 interface CustomerHomeProps {
   bestSellers: MenuItem[];
@@ -18,7 +19,7 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
   onAddToCart,
 }) => {
   return (
-    <div className="space-y-10 pb-16">
+    <div className="space-y-12 pb-16">
       {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl bg-stone-900 text-white shadow-xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/20 via-stone-900/40 to-transparent pointer-events-none" />
@@ -33,11 +34,12 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
               Coffee, breakfast &amp; comfort food made for lingering.
             </h1>
             <p className="mt-4 max-w-lg text-sm sm:text-base leading-relaxed text-stone-300">
-              From our famous slow-crisped pork adobo flakes to freshly pulled artisan lattes and handcrafted cheesecakes. Order ahead for fast pickup or dine-in, or reserve your table.
+              From our famous slow-crisped pork adobo flakes to freshly pulled artisan lattes, homemade cheesecakes, and specialty brews. Order ahead or reserve your table.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3.5">
               <button
+                id="hero-order-online-btn"
                 onClick={onNavigateMenu}
                 className="inline-flex h-12 items-center gap-2.5 rounded-xl bg-amber-500 px-6 text-sm font-extrabold text-stone-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition transform active:scale-95"
               >
@@ -45,6 +47,7 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
                 Order Online
               </button>
               <button
+                id="hero-reserve-table-btn"
                 onClick={onNavigateReservation}
                 className="inline-flex h-12 items-center gap-2.5 rounded-xl border border-stone-700 bg-stone-800/80 px-6 text-sm font-bold text-stone-100 hover:bg-stone-800 transition"
               >
@@ -68,35 +71,59 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
           {/* Hero Collage */}
           <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
             <div className="space-y-3.5">
-              <div className="aspect-square overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
+              <div className="group relative aspect-square overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/latte.webp"
-                  alt="Latte"
+                  src="/images/01_Hearts_Latte_Art.jpg"
+                  alt="Heart Latte Art"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/latte.webp';
+                  }}
                 />
+                <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                  Heart Latte Art
+                </div>
               </div>
-              <div className="aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
+              <div className="group relative aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/porkadoboflakes.webp"
-                  alt="Pork Adobo Flakes"
+                  src="/images/07_Afternoon_Coffee.jpg"
+                  alt="Papa Carlos Butifarra"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/porklonganisa.webp';
+                  }}
                 />
+                <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                  Papa Carlos Butifarra
+                </div>
               </div>
             </div>
             <div className="space-y-3.5 pt-6">
-              <div className="aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
+              <div className="group relative aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/cheesecakeduo.webp"
-                  alt="Cheesecake"
+                  src="/images/08_Cold_Brew.jpg"
+                  alt="Orange Mocha Latte"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/icelatte.webp';
+                  }}
                 />
+                <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                  Orange Mocha
+                </div>
               </div>
-              <div className="aspect-square overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
+              <div className="group relative aspect-square overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/tiramisu.webp"
-                  alt="Tiramisu"
+                  src="/images/06_Coffee_Beans.jpg"
+                  alt="Cheese Taro Milkshake"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/images/milkshake.webp';
+                  }}
                 />
+                <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
+                  Cheese Taro Shake
+                </div>
               </div>
             </div>
           </div>
@@ -144,6 +171,12 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Landing Gallery Component (All 17 Images) */}
+      <LandingGallery
+        onNavigateMenu={onNavigateMenu}
+        onNavigateReservation={onNavigateReservation}
+      />
 
       {/* Best Sellers Showcase */}
       <section className="space-y-6">

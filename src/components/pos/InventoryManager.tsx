@@ -33,7 +33,9 @@ import {
   ArrowUpDown,
   MoveRight,
   SlidersHorizontal,
+  Bell,
 } from 'lucide-react';
+import { LowStockNotificationModal } from './LowStockNotificationModal';
 
 interface InventoryManagerProps {
   categories: Category[];
@@ -43,6 +45,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
   const { showConfirm, showAlert } = useModal();
   const [items, setItems] = useState<MenuItem[]>(() => AppStore.getMenuItems());
   const [categories, setCategories] = useState<Category[]>(() => AppStore.getCategories());
+  const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
 
   // Active View Tab: 'items' or 'categories'
   const [activeTab, setActiveTab] = useState<'items' | 'categories'>('items');
@@ -515,6 +518,25 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
 
         {/* Global Quick Action Buttons */}
         <div className="flex items-center gap-2">
+          {/* Low Stock In-App Alerts Button */}
+          <button
+            onClick={() => setIsLowStockModalOpen(true)}
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition cursor-pointer ${
+              items.filter((i) => (i.quantity ?? 0) <= 5).length > 0
+                ? 'bg-rose-50 border-rose-300 text-rose-800 hover:bg-rose-100 shadow-2xs'
+                : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+            }`}
+            title="Open Low Stock Notifications & Batch Restock"
+          >
+            <Bell className={`h-4 w-4 ${items.filter((i) => (i.quantity ?? 0) <= 5).length > 0 ? 'text-rose-600 animate-bounce' : 'text-stone-500'}`} />
+            <span>Low Stock</span>
+            {items.filter((i) => (i.quantity ?? 0) <= 5).length > 0 && (
+              <span className="rounded-full bg-rose-600 px-1.5 py-0.2 text-[10px] font-black text-white">
+                {items.filter((i) => (i.quantity ?? 0) <= 5).length}
+              </span>
+            )}
+          </button>
+
           {/* New Category Button */}
           <button
             onClick={() => handleOpenAddCategory()}
@@ -1590,6 +1612,17 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
             </form>
           </div>
         </div>
+      )}
+
+      {/* Low Stock In-App Notification Modal */}
+      {isLowStockModalOpen && (
+        <LowStockNotificationModal
+          isOpen={isLowStockModalOpen}
+          onClose={() => setIsLowStockModalOpen(false)}
+          categories={categories}
+          activeStaff={activeStaff}
+          onNavigateToInventory={() => setIsLowStockModalOpen(false)}
+        />
       )}
     </div>
   );

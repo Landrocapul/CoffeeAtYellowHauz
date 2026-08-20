@@ -48,7 +48,10 @@ import {
   Delete,
   Ticket,
   Tag,
+  Bell,
+  AlertTriangle,
 } from 'lucide-react';
+import { LowStockNotificationModal } from './LowStockNotificationModal';
 
 interface PosMenuProps {
   categories: Category[];
@@ -66,6 +69,7 @@ export const PosMenu: React.FC<PosMenuProps> = ({
   onOrderComplete,
 }) => {
   const { showAlert } = useModal();
+  const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
   const [categoryType, setCategoryType] = useState<'drinks' | 'food'>('drinks');
   const [selectedCategory, setSelectedCategory] = useState<number | 'all'>(9);
   const [selectedTemp, setSelectedTemp] = useState<string>('all');
@@ -227,9 +231,31 @@ export const PosMenu: React.FC<PosMenuProps> = ({
 
   // Cart operations
   const addToCart = (item: MenuItem) => {
+    if ((item.quantity ?? 0) <= 0) {
+      showAlert({
+        title: 'Item Out of Stock',
+        message: `${item.name} is currently out of stock. Please restock it via Inventory management.`,
+        type: 'warning',
+      });
+      return;
+    }
+
+    const existingItem = cart.find((ci) => ci.item.id === item.id);
+    if (existingItem && existingItem.quantity >= (item.quantity ?? 0)) {
+      showAlert({
+        title: 'Stock Limit Reached',
+        message: `Only ${item.quantity} units of ${item.name} are available in stock.`,
+        type: 'warning',
+      });
+      return;
+    }
+
     setCart((prev) => {
       const idx = prev.findIndex((ci) => ci.item.id === item.id);
       if (idx !== -1) {
+        if (prev[idx].quantity >= item.quantity) {
+          return prev;
+        }
         const next = [...prev];
         next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
         return next;
@@ -239,11 +265,26 @@ export const PosMenu: React.FC<PosMenuProps> = ({
   };
 
   const updateQuantity = (itemId: number, delta: number) => {
+    const menuItem = menuItems.find((i) => i.id === itemId);
+    const existing = cart.find((ci) => ci.item.id === itemId);
+
+    if (delta > 0 && menuItem && existing && existing.quantity + delta > menuItem.quantity) {
+      showAlert({
+        title: 'Insufficient Inventory',
+        message: `Only ${menuItem.quantity} units available in stock.`,
+        type: 'warning',
+      });
+      return;
+    }
+
     setCart((prev) =>
       prev
         .map((ci) => {
           if (ci.item.id === itemId) {
             const nextQty = ci.quantity + delta;
+            if (delta > 0 && menuItem && nextQty > menuItem.quantity) {
+              return ci;
+            }
             return nextQty > 0 ? { ...ci, quantity: nextQty } : null;
           }
           return ci;
@@ -541,6 +582,29 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                 {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
               </span>
             </div>
+
+            {/* In-App Low Stock Alert Ribbon for Cashier */}
+            {menuItems.filter((i) => (i.quantity ?? 0) <= 5).length > 0 && (
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 text-xs text-amber-900 animate-in fade-in duration-200">
+                <div className="flex items-center gap-1.5 font-medium truncate">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span className="truncate text-[11px]">
+                    <strong className="font-bold">
+                      {menuItems.filter((i) => (i.quantity ?? 0) <= 5).length}
+                    </strong>{' '}
+                    items running low or out of stock
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsLowStockModalOpen(true)}
+                  className="flex items-center gap-1 font-bold text-amber-900 bg-amber-500/25 hover:bg-amber-500/40 px-2.5 py-1 rounded-lg transition shrink-0 cursor-pointer text-[11px]"
+                >
+                  <Bell className="h-3 w-3" />
+                  <span>View</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Product Grid */}
@@ -555,36 +619,68 @@ export const PosMenu: React.FC<PosMenuProps> = ({
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
-                {filteredItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => addToCart(item)}
-                    className="group flex flex-col justify-between text-left rounded-2xl border border-stone-200 bg-white p-2 sm:p-2.5 shadow-2xs hover:border-amber-400 hover:shadow-md transition active:scale-95"
-                  >
-                    <div className="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-stone-100 mb-1.5 sm:mb-2">
-                      <img
-                        src={item.imageUrl || '/images/latte.webp'}
-                        alt={item.name}
-                        className="h-full w-full object-cover group-hover:scale-105 transition duration-200"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/images/latte.webp';
-                        }}
-                      />
-                      <span className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 rounded-lg bg-stone-950/90 backdrop-blur-xs px-1.5 sm:px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold text-amber-400">
-                        ₱{item.price.toFixed(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-xs text-stone-900 line-clamp-1 group-hover:text-amber-800">
-                        {item.name}
-                      </h4>
-                      <div className="mt-0.5 flex items-center justify-between text-[10px] text-stone-500">
-                        <span className="capitalize">{item.temperature}</span>
-                        <span>Qty: {item.quantity}</span>
+                {filteredItems.map((item) => {
+                  const isOutOfStock = (item.quantity ?? 0) <= 0;
+                  const isLowStock = !isOutOfStock && (item.quantity ?? 0) <= 5;
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => addToCart(item)}
+                      className={`group flex flex-col justify-between text-left rounded-2xl border bg-white p-2 sm:p-2.5 shadow-2xs transition active:scale-95 cursor-pointer ${
+                        isOutOfStock
+                          ? 'border-rose-200 bg-rose-50/20 opacity-75 hover:border-rose-400'
+                          : isLowStock
+                          ? 'border-amber-300 hover:border-amber-500 hover:shadow-md'
+                          : 'border-stone-200 hover:border-amber-400 hover:shadow-md'
+                      }`}
+                    >
+                      <div className="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-stone-100 mb-1.5 sm:mb-2">
+                        <img
+                          src={item.imageUrl || '/images/latte.webp'}
+                          alt={item.name}
+                          className={`h-full w-full object-cover group-hover:scale-105 transition duration-200 ${
+                            isOutOfStock ? 'grayscale opacity-60' : ''
+                          }`}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/images/latte.webp';
+                          }}
+                        />
+
+                        {/* Stock status indicator pill */}
+                        {isOutOfStock ? (
+                          <span className="absolute top-1.5 left-1.5 rounded-md bg-rose-600 px-1.5 py-0.5 font-bold text-[9px] text-white uppercase shadow-xs">
+                            Out of Stock
+                          </span>
+                        ) : isLowStock ? (
+                          <span className="absolute top-1.5 left-1.5 rounded-md bg-amber-500 px-1.5 py-0.5 font-extrabold text-[9px] text-stone-950 shadow-xs flex items-center gap-0.5">
+                            <AlertTriangle className="h-2.5 w-2.5" />
+                            {item.quantity} left
+                          </span>
+                        ) : null}
+
+                        <span className="absolute bottom-1 right-1 sm:bottom-1.5 sm:right-1.5 rounded-lg bg-stone-950/90 backdrop-blur-xs px-1.5 sm:px-2 py-0.5 font-mono text-[10px] sm:text-[11px] font-bold text-amber-400">
+                          ₱{item.price.toFixed(0)}
+                        </span>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                      <div>
+                        <h4 className="font-bold text-xs text-stone-900 line-clamp-1 group-hover:text-amber-800">
+                          {item.name}
+                        </h4>
+                        <div className="mt-0.5 flex items-center justify-between text-[10px] text-stone-500">
+                          <span className="capitalize">{item.temperature}</span>
+                          {isOutOfStock ? (
+                            <span className="font-bold text-rose-600">Out of Stock</span>
+                          ) : isLowStock ? (
+                            <span className="font-bold text-amber-700">Low: {item.quantity}</span>
+                          ) : (
+                            <span>Qty: {item.quantity}</span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1135,6 +1231,16 @@ export const PosMenu: React.FC<PosMenuProps> = ({
           setSeniorPwdIdNumber('');
         }}
       />
+
+      {/* In-App Low Stock Notification Modal for Cashier */}
+      {isLowStockModalOpen && (
+        <LowStockNotificationModal
+          isOpen={isLowStockModalOpen}
+          onClose={() => setIsLowStockModalOpen(false)}
+          categories={categories}
+          activeStaff={activeStaff}
+        />
+      )}
     </div>
   );
 };
