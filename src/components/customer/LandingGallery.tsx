@@ -25,12 +25,13 @@ interface LandingGalleryProps {
 
 const CATEGORIES = [
   'All',
+  'Café Spaces & Ambiance',
   'Specialty Coffee',
   'Signature Drinks',
   'Savory Mains',
   'Handcrafted Treats',
   'Café Moments',
-  'Community & Events'
+  'Community & Events',
 ] as const;
 
 export const LandingGallery: React.FC<LandingGalleryProps> = ({
@@ -40,6 +41,13 @@ export const LandingGallery: React.FC<LandingGalleryProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeModalItem, setActiveModalItem] = useState<GalleryItem | null>(null);
+  const [spotlightImageIndex, setSpotlightImageIndex] = useState<number>(0);
+
+  const spaceHighlights = useMemo(() => {
+    return LANDING_GALLERY_ITEMS.filter((i) => i.category === 'Café Spaces & Ambiance' || i.filename.startsWith('33_') || i.filename.startsWith('18_') || i.filename.startsWith('19_') || i.filename.startsWith('20_') || i.filename.startsWith('22_') || i.filename.startsWith('26_'));
+  }, []);
+
+  const activeSpotlight = spaceHighlights[spotlightImageIndex] || spaceHighlights[0] || LANDING_GALLERY_ITEMS[0];
 
   const filteredItems = useMemo(() => {
     return LANDING_GALLERY_ITEMS.filter((item) => {
@@ -82,14 +90,14 @@ export const LandingGallery: React.FC<LandingGalleryProps> = ({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-amber-800">
               <Sparkles className="h-3.5 w-3.5 text-amber-600" />
-              Café Visual Gallery • 17 Highlights
+              Café Visual Gallery • {LANDING_GALLERY_ITEMS.length} Photo Highlights
             </span>
           </div>
           <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-stone-900 font-display">
-            Stories, Specials &amp; Handcrafted Moments
+            Spaces, Stories &amp; Handcrafted Moments
           </h2>
           <p className="mt-1 max-w-2xl text-xs sm:text-sm text-stone-600 leading-relaxed">
-            Explore our signature drinks, kitchen favorites, anniversary creations, and vibrant café life at V. Mapa, Mabini St., Davao City.
+            Take a visual tour through our garden patio, cozy timber interior, artisan espresso bar, signature drinks, and heritage café moments at V. Mapa &amp; Mabini St., Davao City.
           </p>
         </div>
 
@@ -101,7 +109,7 @@ export const LandingGallery: React.FC<LandingGalleryProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search specials, treats, events..."
+            placeholder="Search spaces, drinks, food..."
             className="w-full rounded-xl border border-stone-200 bg-white pl-10 pr-4 py-2.5 text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20 shadow-2xs"
           />
           {searchQuery && (
@@ -242,20 +250,26 @@ export const LandingGallery: React.FC<LandingGalleryProps> = ({
       )}
 
       {/* Atmosphere / Customer Space Special Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-stone-900 text-white p-6 sm:p-8 lg:p-10 shadow-lg">
+      <div className="relative overflow-hidden rounded-3xl bg-stone-900 text-white p-6 sm:p-8 lg:p-10 shadow-lg border border-stone-800">
         <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative grid gap-8 lg:grid-cols-[1.2fr_.8fr] lg:items-center">
+        <div className="relative grid gap-8 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
           <div className="space-y-4">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-400 uppercase tracking-widest">
-              <MapPin className="h-3.5 w-3.5" />
-              Visit Our Space • Davao City
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-xs font-bold text-amber-400 uppercase tracking-widest">
+                <MapPin className="h-3.5 w-3.5" />
+                Visit Our Space • Davao City
+              </span>
+              <span className="rounded-full bg-stone-800 px-2.5 py-0.5 text-[11px] font-mono text-stone-300">
+                {spaceHighlights.length} Ambient Spaces
+              </span>
+            </div>
+
             <h3 className="font-display text-2xl sm:text-4xl font-extrabold text-stone-50 leading-tight">
               &ldquo;Good things take time, sometime in a Cup!&rdquo;
             </h3>
             <p className="text-xs sm:text-sm text-stone-300 max-w-xl leading-relaxed">
-              Step into Coffee at Yellow Hauz — featuring a lush garden patio, cozy airconditioned dining rooms, artisanal coffee brews, and hearty home-style breakfasts.
+              Step into Coffee at Yellow Hauz — featuring a lush garden patio, cozy airconditioned dining rooms, rustic timber woodwork, artisan espresso bar, and relaxing evening lighting.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-3 pt-2">
@@ -266,6 +280,38 @@ export const LandingGallery: React.FC<LandingGalleryProps> = ({
               <div className="flex items-center gap-2.5 text-xs text-stone-300">
                 <MapPin className="h-4 w-4 text-amber-400 shrink-0" />
                 <span>V. Mapa &amp; Mabini St., Davao City</span>
+              </div>
+            </div>
+
+            {/* Quick Interactive Thumbnail Strip */}
+            <div className="pt-2 space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-amber-400/90">
+                Explore Café Corners ({spotlightImageIndex + 1}/{spaceHighlights.length}):
+              </p>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {spaceHighlights.map((item, idx) => (
+                  <button
+                    key={item.id}
+                    id={`spotlight-thumb-${item.id}`}
+                    onClick={() => setSpotlightImageIndex(idx)}
+                    className={`group relative shrink-0 overflow-hidden rounded-xl border transition-all ${
+                      spotlightImageIndex === idx
+                        ? 'border-amber-400 ring-2 ring-amber-400/40 scale-105'
+                        : 'border-stone-700 opacity-60 hover:opacity-100 hover:border-stone-500'
+                    }`}
+                    style={{ width: '56px', height: '42px' }}
+                    title={item.title}
+                  >
+                    <img
+                      src={item.src}
+                      alt={item.title}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/images/latte.webp';
+                      }}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -289,24 +335,79 @@ export const LandingGallery: React.FC<LandingGalleryProps> = ({
             </div>
           </div>
 
-          {/* Featured Image Spotlight */}
-          <div className="relative group overflow-hidden rounded-2xl border border-stone-800 shadow-xl bg-stone-950">
-            <img
-              src="/images/33_Customer_Space.webp"
-              alt="Coffee at Yellow Hauz Space"
-              className="w-full h-64 sm:h-72 object-cover transition duration-300 group-hover:scale-105"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/images/porkadoboflakes.webp';
-              }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/20 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-              <span className="rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-stone-950 uppercase tracking-wide">
-                Café Atmosphere
-              </span>
-              <p className="mt-1 font-display text-sm font-bold text-white">
-                Cozy garden lights &amp; timber storefront at night
-              </p>
+          {/* Featured Image Spotlight Card */}
+          <div
+            id="spotlight-active-card"
+            onClick={() => setActiveModalItem(activeSpotlight)}
+            className="group relative cursor-pointer overflow-hidden rounded-2xl border border-stone-800 shadow-2xl bg-stone-950"
+          >
+            <div className="relative aspect-4/3 overflow-hidden">
+              <img
+                src={activeSpotlight.src}
+                alt={activeSpotlight.title}
+                className="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/latte.webp';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/20 to-transparent" />
+
+              {/* Prev / Next within Spotlight */}
+              <button
+                id="spotlight-prev-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSpotlightImageIndex((prev) =>
+                    prev > 0 ? prev - 1 : spaceHighlights.length - 1
+                  );
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-stone-950/70 border border-stone-700 text-white hover:bg-amber-600 transition shadow-md"
+                title="Previous Space"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                id="spotlight-next-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSpotlightImageIndex((prev) =>
+                    prev < spaceHighlights.length - 1 ? prev + 1 : 0
+                  );
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 grid h-8 w-8 place-items-center rounded-full bg-stone-950/70 border border-stone-700 text-white hover:bg-amber-600 transition shadow-md"
+                title="Next Space"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+
+              {/* Top Category Badge */}
+              <div className="absolute top-3 left-3 flex gap-2">
+                <span
+                  className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide shadow-xs ${
+                    activeSpotlight.badgeColor || 'bg-amber-500 text-stone-950'
+                  }`}
+                >
+                  {activeSpotlight.tag}
+                </span>
+                {activeSpotlight.price && (
+                  <span className="rounded-md bg-stone-950/80 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-300">
+                    {activeSpotlight.price}
+                  </span>
+                )}
+              </div>
+
+              {/* Bottom Details Overlay */}
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="font-display text-base sm:text-lg font-bold text-white group-hover:text-amber-300 transition">
+                  {activeSpotlight.title}
+                </p>
+                <p className="mt-0.5 text-xs text-stone-300 line-clamp-1">
+                  {activeSpotlight.subtitle}
+                </p>
+                <p className="mt-1 text-[11px] text-amber-400/90 font-medium">
+                  Click image to expand in full view ↗
+                </p>
+              </div>
             </div>
           </div>
         </div>

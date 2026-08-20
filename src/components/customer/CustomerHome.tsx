@@ -81,48 +81,48 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Heart Latte Art
+                  Artisan Latte Art
                 </div>
               </div>
               <div className="group relative aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/07_Afternoon_Coffee.jpg"
-                  alt="Papa Carlos Butifarra"
+                  src="/images/18_Main_Counter_Interior.webp"
+                  alt="Main Espresso Counter"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/porklonganisa.webp';
+                    (e.target as HTMLImageElement).src = '/images/latte.webp';
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Papa Carlos Butifarra
+                  Espresso Bar Counter
                 </div>
               </div>
             </div>
             <div className="space-y-3.5 pt-6">
               <div className="group relative aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/08_Cold_Brew.jpg"
-                  alt="Orange Mocha Latte"
+                  src="/images/19_Storefront_Night.webp"
+                  alt="Storefront Night Façade"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/icelatte.webp';
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Orange Mocha
+                  Night Façade &amp; Garden
                 </div>
               </div>
               <div className="group relative aspect-square overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/06_Coffee_Beans.jpg"
-                  alt="Cheese Taro Milkshake"
+                  src="/images/22_Outdoor_Seating.webp"
+                  alt="Garden Patio Seating"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/milkshake.webp';
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Cheese Taro Shake
+                  Al Fresco Patio
                 </div>
               </div>
             </div>
