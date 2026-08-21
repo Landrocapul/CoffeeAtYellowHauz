@@ -41,9 +41,9 @@ export default function App() {
 function MainApp() {
   // App navigation state
   const [appMode, setAppMode] = useState<'customer' | 'staff'>('customer');
-  const [customerTab, setCustomerTab] = useState<'home' | 'menu' | 'reservation' | 'account'>(
-    'home'
-  );
+  const [customerTab, setCustomerTab] = useState<
+    'home' | 'menu' | 'reservation' | 'venue' | 'account'
+  >('home');
   const [staffTab, setStaffTab] = useState<
     'pos' | 'tables' | 'tickets' | 'reports' | 'analytics' | 'inventory' | 'settings'
   >('pos');
@@ -127,7 +127,11 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-100/70 text-stone-900 flex flex-col font-sans selection:bg-amber-500 selection:text-stone-950">
+    <div
+      className={`min-h-screen bg-stone-100/70 text-stone-900 flex flex-col selection:bg-amber-500 selection:text-stone-950 ${
+        appMode === 'customer' ? 'customer-mode font-baskerville' : 'font-sans'
+      }`}
+    >
       {/* Navigation Bar */}
       <Navigation
         appMode={appMode}
@@ -160,6 +164,7 @@ function MainApp() {
                 settings={settings}
                 onNavigateMenu={() => setCustomerTab('menu')}
                 onNavigateReservation={() => setCustomerTab('reservation')}
+                onNavigateVenue={() => setCustomerTab('venue')}
                 onAddToCart={(item) => {
                   setCustomerTab('menu');
                 }}
@@ -181,8 +186,23 @@ function MainApp() {
               <CustomerReservation
                 settings={settings}
                 activeCustomer={activeCustomer}
+                mode="table"
+                onModeChange={(mode) => setCustomerTab(mode === 'venue' ? 'venue' : 'reservation')}
                 onReservationSuccess={() => refreshAppData()}
                 onRequireLogin={() => setIsCustomerLoginOpen(true)}
+                onNavigateAccount={() => setCustomerTab('account')}
+              />
+            )}
+
+            {customerTab === 'venue' && (
+              <CustomerReservation
+                settings={settings}
+                activeCustomer={activeCustomer}
+                mode="venue"
+                onModeChange={(mode) => setCustomerTab(mode === 'venue' ? 'venue' : 'reservation')}
+                onReservationSuccess={() => refreshAppData()}
+                onRequireLogin={() => setIsCustomerLoginOpen(true)}
+                onNavigateAccount={() => setCustomerTab('account')}
               />
             )}
 

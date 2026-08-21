@@ -453,7 +453,7 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                 }}
                 className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-black transition-all duration-150 ${
                   categoryType === 'drinks'
-                    ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                    ? 'bg-amber-500 text-stone-950 shadow-xs'
                     : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
                 }`}
               >
@@ -472,7 +472,7 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                 }}
                 className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-black transition-all duration-150 ${
                   categoryType === 'food'
-                    ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                    ? 'bg-amber-500 text-stone-950 shadow-xs'
                     : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
                 }`}
               >
@@ -494,7 +494,7 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                   onClick={() => setSelectedCategory(cat.id)}
                   className={`w-full flex items-center gap-3 text-left rounded-full px-4 py-2.5 sm:py-3 text-xs font-black transition-all duration-150 border ${
                     isSelected
-                      ? 'bg-[#f5a524] text-stone-950 border-[#f5a524] shadow-xs'
+                      ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-xs'
                       : 'bg-white text-stone-900 border-stone-200 hover:bg-stone-50 hover:border-stone-300 shadow-2xs active:scale-[0.98]'
                   }`}
                 >
@@ -547,7 +547,7 @@ export const PosMenu: React.FC<PosMenuProps> = ({
                   onClick={() => setSelectedTemp('hot')}
                   className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition ${
                     selectedTemp === 'hot'
-                      ? 'bg-orange-500 text-white shadow-xs'
+                      ? 'bg-amber-700 text-white shadow-xs'
                       : 'text-stone-600'
                   }`}
                 >
@@ -819,85 +819,84 @@ export const PosMenu: React.FC<PosMenuProps> = ({
           )}
         </div>
 
-        {/* Discount Selection */}
-        <div className="border-t border-stone-200 pt-2 pb-1">
-          {selectedDiscount ? (
-            <div className="rounded-xl border border-emerald-500 bg-emerald-50/90 p-2 flex items-center justify-between gap-2 shadow-2xs">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-600 text-white font-extrabold text-[10px] shrink-0">
-                  %
-                </span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-emerald-950 truncate">
-                      {selectedDiscount.name}
+        {/* Side-by-Side: Total Summary Container & Discount Container */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 my-2 items-stretch">
+          {/* Left Container: Calculation Summary & Total Due */}
+          <div className={`${selectedDiscount ? 'sm:col-span-7' : 'sm:col-span-8'} rounded-2xl bg-stone-50 p-2.5 sm:p-3 border border-stone-200/80 flex flex-col justify-between space-y-1 text-xs text-stone-600`}>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-[11px] sm:text-xs">
+                <span>Subtotal:</span>
+                <span className="font-mono font-medium">₱{subtotal.toFixed(2)}</span>
+              </div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between items-center text-emerald-700 font-bold text-[11px] sm:text-xs">
+                  <span className="truncate pr-1">Discount:</span>
+                  <span className="font-mono shrink-0">-₱{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-[11px] sm:text-xs">
+                <span>VAT ({taxRate}%):</span>
+                <span className="font-mono font-medium">₱{taxAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-baseline font-bold text-stone-900 pt-1.5 border-t border-stone-200 mt-1">
+              <span className="text-xs sm:text-sm">Total Due:</span>
+              <span className="font-mono text-amber-700 font-extrabold text-base sm:text-lg">
+                ₱{totalAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {/* Right Container: Discount / Coupon Control Side-by-Side */}
+          <div className={`${selectedDiscount ? 'sm:col-span-5' : 'sm:col-span-4'} flex flex-col`}>
+            {selectedDiscount ? (
+              <div className="h-full rounded-2xl border border-emerald-400 bg-emerald-50/90 p-2 sm:p-2.5 flex flex-col justify-between shadow-2xs">
+                <div>
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="inline-flex items-center gap-0.5 rounded bg-emerald-600 px-1.5 py-0.5 text-[9px] font-black text-white">
+                      % DISCOUNT
                     </span>
-                    <span className="rounded bg-emerald-200 px-1 py-0.2 text-[9px] font-extrabold text-emerald-900 shrink-0">
-                      {selectedDiscount.type === 'percent' ? `${selectedDiscount.value}%` : `₱${selectedDiscount.value}`}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedDiscount(null);
+                        setSeniorPwdIdNumber('');
+                      }}
+                      title="Remove Discount"
+                      className="rounded p-0.5 text-stone-400 hover:bg-rose-100 hover:text-rose-600 transition"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div className="mt-1 text-xs font-bold text-emerald-950 truncate" title={selectedDiscount.name}>
+                    {selectedDiscount.name}
                   </div>
                   <div className="text-[10px] text-emerald-700 font-semibold truncate">
                     Saved: -₱{discountAmount.toFixed(2)}
-                    {seniorPwdIdNumber && ` • ID: ${seniorPwdIdNumber}`}
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
+
                 <button
                   type="button"
                   onClick={() => setIsDiscountModalOpen(true)}
-                  className="rounded-lg bg-white border border-emerald-300 px-2 py-1 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100 transition"
+                  className="mt-1 w-full rounded-lg bg-white border border-emerald-300 py-1 text-[10px] font-bold text-emerald-800 hover:bg-emerald-100 transition text-center shadow-2xs"
                 >
                   Change
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedDiscount(null);
-                    setSeniorPwdIdNumber('');
-                  }}
-                  title="Remove Discount"
-                  className="rounded-lg bg-white border border-rose-200 p-1 text-rose-600 hover:bg-rose-50 transition"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
               </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setIsDiscountModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-stone-50 hover:bg-amber-50/70 hover:border-amber-300 hover:text-amber-900 py-2 text-xs font-bold text-stone-700 transition active:scale-98"
-            >
-              <Ticket className="h-4 w-4 text-amber-600" />
-              <span>Apply Discount / Coupon</span>
-            </button>
-          )}
-        </div>
-
-        {/* Calculation Summary */}
-        <div className="rounded-2xl bg-stone-50 p-3 border border-stone-200/80 space-y-1 text-xs text-stone-600 my-2">
-          <div className="flex justify-between">
-            <span>Subtotal:</span>
-            <span className="font-mono">₱{subtotal.toFixed(2)}</span>
-          </div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-emerald-700 font-bold">
-              <span>
-                Discount ({selectedDiscount?.name} - {selectedDiscount?.type === 'percent' ? `${selectedDiscount.value}%` : `₱${selectedDiscount?.value}`}):
-              </span>
-              <span className="font-mono">-₱{discountAmount.toFixed(2)}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span>VAT ({taxRate}%):</span>
-            <span className="font-mono">₱{taxAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between font-bold text-sm text-stone-900 pt-1 border-t border-stone-200">
-            <span>Total Due:</span>
-            <span className="font-mono text-amber-700 font-extrabold text-base">
-              ₱{totalAmount.toFixed(2)}
-            </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsDiscountModalOpen(true)}
+                className="h-full min-h-[75px] w-full flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-amber-300/80 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 p-2 text-center text-amber-900 transition active:scale-98 shadow-2xs group"
+              >
+                <div className="grid h-7 w-7 place-items-center rounded-full bg-amber-200/80 group-hover:bg-amber-300 transition text-amber-800">
+                  <Ticket className="h-4 w-4" />
+                </div>
+                <span className="text-xs font-bold leading-tight">Discount</span>
+              </button>
+            )}
           </div>
         </div>
 

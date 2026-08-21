@@ -55,11 +55,27 @@ export interface CustomerAccount {
   createdAt: string;
 }
 
+export interface VenueAddon {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface Reservation {
   id: number;
   reservationCode: string;
+  bookingType?: 'table' | 'venue';
   tableId: number;
   tableNumber?: number;
+  venueName?: string;
+  venueDurationHours?: number; // e.g. 3, 4, 5, 6
+  venueRate?: number; // base rate, e.g. 300 for 3 hours
+  venueAddons?: VenueAddon[];
+  totalAmount?: number;
+  eventType?: string; // e.g. Meeting, Workshop, Birthday, Party, Co-working
+  seatingLayout?: 'boardroom' | 'classroom' | 'banquet' | 'lounge';
+  paymentStatus?: 'unpaid' | 'paid' | 'downpayment_paid';
+  paymentMethod?: 'gcash' | 'cash' | 'card';
   customerId?: number | null;
   customerName: string;
   contactNumber: string;
@@ -105,6 +121,8 @@ export interface Order {
   cashierName: string;
   items: OrderItem[];
   createdAt: string;
+  processingStartedAt?: string;
+  completedAt?: string;
 }
 
 export interface TimeBasedMenu {

@@ -57,7 +57,7 @@ export const ChatbotModal: React.FC<ChatbotModalProps> = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 customer-mode font-baskerville">
       <div className="flex flex-col w-full max-w-lg h-[600px] max-h-[90vh] rounded-3xl bg-white shadow-2xl overflow-hidden border border-stone-200">
         {/* Header */}
         <div className="flex items-center justify-between bg-stone-900 px-6 py-4 text-white">

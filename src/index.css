@@ -1,5 +1,72 @@
 @import "tailwindcss";
 
+@theme {
+  --color-amber-50: #FAF8F5;
+  --color-amber-100: #F4EFEA;
+  --color-amber-200: #E7DDCE;
+  --color-amber-300: #D9C8B5;
+  --color-amber-400: #C7B098;
+  --color-amber-500: #B59A7E;
+  --color-amber-600: #9C8065;
+  --color-amber-700: #81674F;
+  --color-amber-800: #66503D;
+  --color-amber-900: #4A3A2C;
+  --color-amber-950: #2E231A;
+
+  --color-yellow-50: #FDFBF8;
+  --color-yellow-100: #F7F3EE;
+  --color-yellow-200: #EAE2D8;
+  --color-yellow-300: #DDD0C1;
+  --color-yellow-400: #CBB9A7;
+  --color-yellow-500: #BCA38E;
+  --color-yellow-600: #A28974;
+  --color-yellow-700: #856E5C;
+  --color-yellow-800: #675446;
+  --color-yellow-900: #4B3D33;
+  --color-yellow-950: #30261F;
+
+  --color-orange-50: #FAF7F2;
+  --color-orange-100: #F4ECE2;
+  --color-orange-200: #E6D8C6;
+  --color-orange-300: #D6C2A9;
+  --color-orange-400: #C3AA8D;
+  --color-orange-500: #B09474;
+  --color-orange-600: #967A5B;
+  --color-orange-700: #7B6247;
+  --color-orange-800: #604B35;
+  --color-orange-900: #453626;
+  --color-orange-950: #2B2117;
+
+  --color-beige-50: #FAF8F5;
+  --color-beige-100: #F4EFEA;
+  --color-beige-200: #E8DFD5;
+  --color-beige-300: #DBCBBF;
+  --color-beige-400: #CAB4A3;
+  --color-beige-500: #B89C87;
+  --color-beige-600: #9E826D;
+  --color-beige-700: #806754;
+  --color-beige-800: #634E3E;
+  --color-beige-900: #48372B;
+  --color-beige-950: #2F231B;
+
+  --color-roast: #805B2F;
+  --color-roast-50: #FAF6F0;
+  --color-roast-100: #F3ECE1;
+  --color-roast-200: #E6D8C4;
+  --color-roast-300: #D4BFA4;
+  --color-roast-400: #BA9D78;
+  --color-roast-500: #9E7D53;
+  --color-roast-600: #805B2F;
+  --color-roast-700: #684824;
+  --color-roast-800: #52381B;
+  --color-roast-900: #3D2912;
+  --color-roast-950: #26190A;
+
+  --color-yellowhauz: #805B2F;
+
+  --font-baskerville: "Libre Baskerville", "Baskervville", Baskerville, "Baskerville Old Face", "Hoefler Text", Garamond, "Times New Roman", serif;
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -8,6 +75,34 @@
   .font-display {
     font-family: 'Playfair Display', Georgia, serif;
   }
+
+  .font-baskerville {
+    font-family: "Libre Baskerville", "Baskervville", Baskerville, "Baskerville Old Face", "Hoefler Text", Garamond, "Times New Roman", serif;
+  }
+}
+
+/* Customer Experience Typography - Pure Baskerville */
+.customer-mode,
+.customer-mode h1,
+.customer-mode h2,
+.customer-mode h3,
+.customer-mode h4,
+.customer-mode h5,
+.customer-mode h6,
+.customer-mode p,
+.customer-mode span,
+.customer-mode button,
+.customer-mode input,
+.customer-mode select,
+.customer-mode textarea,
+.customer-mode label,
+.customer-mode div,
+.customer-mode a,
+.customer-mode table,
+.customer-mode td,
+.customer-mode th,
+.customer-mode * {
+  font-family: "Libre Baskerville", "Baskervville", Baskerville, "Baskerville Old Face", "Hoefler Text", Garamond, "Times New Roman", serif !important;
 }
 
 /* Custom scrollbar for POS and fast workflows */

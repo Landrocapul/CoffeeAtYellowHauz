@@ -118,6 +118,7 @@ const INITIAL_RESERVATIONS: Reservation[] = [
   {
     id: 1,
     reservationCode: 'YH-RES-1049',
+    bookingType: 'table',
     tableId: 6,
     tableNumber: 6,
     customerName: 'Atty. Roberto Tan',
@@ -131,6 +132,7 @@ const INITIAL_RESERVATIONS: Reservation[] = [
   {
     id: 2,
     reservationCode: 'YH-RES-1050',
+    bookingType: 'table',
     tableId: 3,
     tableNumber: 3,
     customerName: 'Claire Villanueva',
@@ -140,6 +142,28 @@ const INITIAL_RESERVATIONS: Reservation[] = [
     notes: 'Afternoon meeting & coffee tasting.',
     status: 'pending',
     createdAt: new Date(Date.now() - 2 * 3600000).toISOString(),
+  },
+  {
+    id: 3,
+    reservationCode: 'YH-VEN-2041',
+    bookingType: 'venue',
+    venueName: 'The Yellow Hauz Private Studio & Event Nook',
+    tableId: 99,
+    tableNumber: 99,
+    venueDurationHours: 3,
+    venueRate: 300,
+    totalAmount: 300,
+    eventType: 'Creative Workshop & Art Class',
+    seatingLayout: 'workshop',
+    paymentStatus: 'paid',
+    paymentMethod: 'gcash',
+    customerName: 'Samantha Nicole Cruz',
+    contactNumber: '+63 918 555 7890',
+    guestCount: 12,
+    reservationAt: new Date(Date.now() + 24 * 3600000).toISOString(),
+    notes: 'Please setup HD Projector, high-speed WiFi, and 12 seats in workshop U-shape format.',
+    status: 'confirmed',
+    createdAt: new Date(Date.now() - 6 * 3600000).toISOString(),
   },
 ];
 
@@ -780,10 +804,26 @@ export class AppStore {
     const order = orders.find((o) => o.id === orderId);
     if (!order) return null;
     order.status = status;
+    const nowIso = new Date().toISOString();
+    if (status === 'processing' && !order.processingStartedAt) {
+      order.processingStartedAt = nowIso;
+    }
+    if (status === 'completed' && !order.completedAt) {
+      order.completedAt = nowIso;
+      if (!order.processingStartedAt) {
+        order.processingStartedAt = order.createdAt;
+      }
+    }
     this.saveOrders(orders);
 
     // Firestore sync
-    updateDoc(doc(db, 'orders', String(orderId)), { status }).catch(() => {
+    const updates: Partial<Order> = {
+      status,
+      ...(order.processingStartedAt ? { processingStartedAt: order.processingStartedAt } : {}),
+      ...(order.completedAt ? { completedAt: order.completedAt } : {}),
+    };
+
+    updateDoc(doc(db, 'orders', String(orderId)), cleanForFirestore(updates)).catch(() => {
       setDoc(doc(db, 'orders', String(orderId)), cleanForFirestore(order)).catch(() => {});
     });
 
@@ -814,20 +854,33 @@ export class AppStore {
   ): Reservation {
     const resList = this.getReservations();
     const newId = resList.length ? Math.max(...resList.map((r) => r.id)) + 1 : 1;
-    const code = `YH-RES-${Math.floor(1000 + Math.random() * 9000)}`;
+    const isVenue = data.bookingType === 'venue';
+    const code = isVenue
+      ? `YH-VEN-${Math.floor(1000 + Math.random() * 9000)}`
+      : `YH-RES-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const newRes: Reservation = {
       ...data,
       id: newId,
       reservationCode: code,
+      bookingType: isVenue ? 'venue' : 'table',
+      venueName: isVenue ? (data.venueName || 'The Yellow Hauz Private Studio & Event Nook') : undefined,
+      venueDurationHours: isVenue ? (Number(data.venueDurationHours) || 3) : undefined,
+      venueRate: isVenue ? (Number(data.venueRate) || 300) : undefined,
+      venueAddons: isVenue ? (data.venueAddons || []) : undefined,
+      totalAmount: isVenue ? (Number(data.totalAmount) || 300) : undefined,
+      eventType: isVenue ? (data.eventType || 'Private Gathering') : undefined,
+      seatingLayout: isVenue ? (data.seatingLayout || 'boardroom') : undefined,
+      paymentStatus: isVenue ? (data.paymentStatus || 'unpaid') : undefined,
+      paymentMethod: data.paymentMethod || (isVenue ? 'gcash' : undefined),
       status: 'pending',
       createdAt: new Date().toISOString(),
-      tableId: data.tableId || 1,
-      tableNumber: data.tableNumber || 1,
+      tableId: isVenue ? 99 : (data.tableId || 1),
+      tableNumber: isVenue ? 99 : (data.tableNumber || 1),
       customerId: data.customerId ?? null,
       customerName: data.customerName || 'Guest',
       contactNumber: data.contactNumber || '+63 900 000 0000',
-      guestCount: Number(data.guestCount) || 2,
+      guestCount: Number(data.guestCount) || (isVenue ? 10 : 2),
       reservationAt: data.reservationAt || new Date().toISOString(),
       notes: data.notes || '',
     };

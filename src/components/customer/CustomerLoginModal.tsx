@@ -57,7 +57,7 @@ export const CustomerLoginModal: React.FC<CustomerLoginModalProps> = ({ onClose,
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 customer-mode font-baskerville">
       <div className="w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-stone-200 animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between border-b border-stone-100 pb-4">
           <div>

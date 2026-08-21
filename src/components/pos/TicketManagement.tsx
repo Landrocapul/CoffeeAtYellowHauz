@@ -1,17 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Order, User, StoreSettings } from '../../types';
 import { AppStore } from '../../services/store';
 import { useModal } from '../../context/ModalContext';
 import {
   Search,
-  Filter,
   CheckCircle2,
   Clock,
   Printer,
-  Ban,
-  Utensils,
-  ShoppingBag,
-  Truck,
   RotateCcw,
   Globe,
   Store,
@@ -20,6 +15,10 @@ import {
   ChefHat,
   Bell,
   User as UserIcon,
+  Timer,
+  AlertTriangle,
+  Flame,
+  Check,
 } from 'lucide-react';
 
 interface TicketManagementProps {
@@ -40,9 +39,19 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
   const [channelTab, setChannelTab] = useState<ChannelTab>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [now, setNow] = useState<number>(() => Date.now());
+
+  // Real-time ticker to update live customer wait times every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const refreshOrders = () => {
     setOrders(AppStore.getOrders());
+    setNow(Date.now());
   };
 
   const handleUpdateStatus = (orderId: number, status: Order['status']) => {
@@ -84,9 +93,87 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
     return AppStore.getOrderChannel(order);
   };
 
+  const formatDuration = (ms: number): string => {
+    if (ms < 0) ms = 0;
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+    return `${minutes}m ${seconds < 10 ? '0' : ''}${seconds}s`;
+  };
+
+  const getOrderTimings = (order: Order) => {
+    const createdTime = new Date(order.createdAt).getTime();
+    const processingTime = order.processingStartedAt
+      ? new Date(order.processingStartedAt).getTime()
+      : null;
+    const completedTime = order.completedAt ? new Date(order.completedAt).getTime() : null;
+
+    let pendingDurationMs = 0;
+    let processingDurationMs = 0;
+    let totalWaitDurationMs = 0;
+
+    if (order.status === 'pending') {
+      pendingDurationMs = Math.max(0, now - createdTime);
+      processingDurationMs = 0;
+      totalWaitDurationMs = pendingDurationMs;
+    } else if (order.status === 'processing') {
+      const prepStart = processingTime || createdTime;
+      pendingDurationMs = Math.max(0, prepStart - createdTime);
+      processingDurationMs = Math.max(0, now - prepStart);
+      totalWaitDurationMs = Math.max(0, now - createdTime);
+    } else if (order.status === 'completed') {
+      const end = completedTime || now;
+      const prepStart = processingTime || createdTime;
+      pendingDurationMs = Math.max(0, prepStart - createdTime);
+      processingDurationMs = Math.max(0, end - prepStart);
+      totalWaitDurationMs = Math.max(0, end - createdTime);
+    } else {
+      totalWaitDurationMs = Math.max(0, (completedTime || now) - createdTime);
+    }
+
+    const isUrgent = (order.status === 'pending' || order.status === 'processing') && totalWaitDurationMs >= 15 * 60 * 1000;
+    const isWarning = (order.status === 'pending' || order.status === 'processing') && totalWaitDurationMs >= 8 * 60 * 1000 && !isUrgent;
+
+    return {
+      pendingDurationMs,
+      processingDurationMs,
+      totalWaitDurationMs,
+      isUrgent,
+      isWarning,
+    };
+  };
+
   const inStoreOrdersAll = orders.filter((o) => getChannel(o) === 'in_store');
   const onlineOrdersAll = orders.filter((o) => getChannel(o) === 'online');
   const pendingOnlineCount = onlineOrdersAll.filter((o) => o.status === 'pending').length;
+
+  // Compute live Kitchen KPIs
+  const pendingOrdersList = orders.filter((o) => o.status === 'pending');
+  const processingOrdersList = orders.filter((o) => o.status === 'processing');
+  const completedOrdersList = orders.filter((o) => o.status === 'completed');
+
+  const avgPendingWaitMs =
+    pendingOrdersList.length > 0
+      ? pendingOrdersList.reduce((acc, o) => acc + getOrderTimings(o).pendingDurationMs, 0) /
+        pendingOrdersList.length
+      : 0;
+
+  const avgProcessingTimeMs =
+    processingOrdersList.length > 0
+      ? processingOrdersList.reduce((acc, o) => acc + getOrderTimings(o).processingDurationMs, 0) /
+        processingOrdersList.length
+      : 0;
+
+  const avgCompletedWaitMs =
+    completedOrdersList.length > 0
+      ? completedOrdersList.reduce((acc, o) => acc + getOrderTimings(o).totalWaitDurationMs, 0) /
+        completedOrdersList.length
+      : 0;
 
   const matchesFilter = (order: Order, targetChannel?: 'in_store' | 'online') => {
     if (targetChannel && getChannel(order) !== targetChannel) return false;
@@ -117,11 +204,18 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
     const channel = getChannel(order);
     const isOnline = channel === 'online';
 
+    const { pendingDurationMs, processingDurationMs, totalWaitDurationMs, isUrgent, isWarning } =
+      getOrderTimings(order);
+
     return (
       <div
         key={order.id}
         className={`flex flex-col justify-between rounded-3xl border bg-white p-5 shadow-xs transition hover:shadow-md ${
-          isOnline
+          isUrgent
+            ? 'border-rose-400 ring-2 ring-rose-500/20'
+            : isWarning
+            ? 'border-amber-400 ring-1 ring-amber-500/20'
+            : isOnline
             ? 'border-indigo-200/80 ring-1 ring-indigo-500/10'
             : 'border-amber-200/80 ring-1 ring-amber-500/10'
         }`}
@@ -178,6 +272,120 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
                 {order.status}
               </span>
             </div>
+          </div>
+
+          {/* Time Spent & Customer Wait Tracker Banner */}
+          <div className="mt-3">
+            {isPending && (
+              <div
+                className={`rounded-2xl p-2.5 border flex items-center justify-between gap-2 shadow-2xs ${
+                  isUrgent
+                    ? 'bg-rose-50 border-rose-300 text-rose-950'
+                    : isWarning
+                    ? 'bg-amber-50 border-amber-300 text-amber-950'
+                    : 'bg-amber-50/70 border-amber-200 text-amber-950'
+                }`}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className={`grid h-7 w-7 place-items-center rounded-xl shrink-0 ${
+                      isUrgent
+                        ? 'bg-rose-600 text-white animate-bounce'
+                        : isWarning
+                        ? 'bg-amber-500 text-stone-950'
+                        : 'bg-amber-400 text-stone-950'
+                    }`}
+                  >
+                    {isUrgent ? <Flame className="h-4 w-4" /> : <Timer className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-800">
+                        Waiting in Queue
+                      </span>
+                      {isUrgent && (
+                        <span className="rounded bg-rose-200 px-1 py-0.2 text-[9px] font-black text-rose-900">
+                          HIGH WAIT
+                        </span>
+                      )}
+                    </div>
+                    <div className="font-mono text-xs sm:text-sm font-black tracking-tight flex items-baseline gap-1">
+                      <span>{formatDuration(pendingDurationMs)}</span>
+                      <span className="text-[10px] font-normal text-stone-500 font-sans">
+                        (Customer Waiting)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-bold text-amber-700 bg-white/80 rounded-lg px-2 py-1 border border-amber-200 shrink-0">
+                  Pending Prep
+                </span>
+              </div>
+            )}
+
+            {isProcessing && (
+              <div
+                className={`rounded-2xl p-2.5 border space-y-1.5 shadow-2xs ${
+                  isUrgent
+                    ? 'bg-rose-50/80 border-rose-300'
+                    : 'bg-sky-50/90 border-sky-200 text-sky-950'
+                }`}
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="grid h-5 w-5 place-items-center rounded-md bg-sky-600 text-white">
+                      <ChefHat className="h-3 w-3" />
+                    </span>
+                    <span className="text-[11px] font-bold text-sky-900">
+                      Kitchen Prep Time:
+                    </span>
+                  </div>
+                  <span className="font-mono text-xs font-black text-sky-800">
+                    {formatDuration(processingDurationMs)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] pt-1 border-t border-sky-200/70 text-stone-600">
+                  <span className="flex items-center gap-1 text-[10px]">
+                    <Clock className="h-3 w-3 text-stone-400" />
+                    Total Wait: (Queue {formatDuration(pendingDurationMs)})
+                  </span>
+                  <span className="font-mono font-bold text-stone-900 text-xs">
+                    {formatDuration(totalWaitDurationMs)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {isCompleted && (
+              <div className="rounded-2xl bg-emerald-50/80 p-2.5 border border-emerald-200 text-emerald-950 flex items-center justify-between gap-2 shadow-2xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="grid h-6 w-6 place-items-center rounded-lg bg-emerald-600 text-white shrink-0">
+                    <Check className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wide text-emerald-800 block">
+                      Total Customer Wait Time
+                    </span>
+                    <span className="font-mono text-xs font-black text-emerald-950">
+                      {formatDuration(totalWaitDurationMs)}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right text-[9px] text-stone-500 font-semibold shrink-0">
+                  <div>Queue: {formatDuration(pendingDurationMs)}</div>
+                  <div>Prep: {formatDuration(processingDurationMs)}</div>
+                </div>
+              </div>
+            )}
+
+            {isCancelled && (
+              <div className="rounded-2xl bg-stone-100 p-2 border border-stone-200 text-stone-600 flex items-center justify-between text-[10px] font-bold">
+                <span>Voided / Cancelled</span>
+                <span className="font-mono">Time: {formatDuration(totalWaitDurationMs)}</span>
+              </div>
+            )}
           </div>
 
           {/* Customer & Dining Context */}
@@ -240,7 +448,7 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
             {isPending && (
               <button
                 onClick={() => handleUpdateStatus(order.id, 'processing')}
-                className="flex items-center gap-1 rounded-xl bg-sky-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-sky-500 transition shadow-xs active:scale-95"
+                className="flex items-center gap-1.5 rounded-xl bg-sky-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-sky-500 transition shadow-xs active:scale-95"
               >
                 <ChefHat className="h-3.5 w-3.5" />
                 Start Prep
@@ -249,7 +457,7 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
             {isProcessing && (
               <button
                 onClick={() => handleUpdateStatus(order.id, 'completed')}
-                className="flex items-center gap-1 rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 transition shadow-xs active:scale-95"
+                className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-500 transition shadow-xs active:scale-95"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Complete
@@ -282,7 +490,7 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
             Ticket Management
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
-            Separately manage On-the-Place (In-Store) POS orders and Online Customer tickets in real time.
+            Real-time queue &amp; prep timers showing exactly how long customers waited for their orders.
           </p>
         </div>
 
@@ -305,6 +513,82 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
             <RotateCcw className="h-3.5 w-3.5" />
             Refresh
           </button>
+        </div>
+      </div>
+
+      {/* Live Kitchen & Wait Time Performance KPI Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Metric 1: Pending Queue */}
+        <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase text-amber-800 tracking-wider">
+              Pending Queue
+            </span>
+            <div className="font-display text-lg font-black text-amber-950 mt-0.5">
+              {pendingOrdersList.length} <span className="text-xs font-normal text-amber-800">tickets</span>
+            </div>
+            <p className="text-[10px] text-amber-700 mt-0.5">
+              Avg Wait: <span className="font-mono font-bold">{formatDuration(avgPendingWaitMs)}</span>
+            </p>
+          </div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-amber-500 text-stone-950 shadow-2xs">
+            <Clock className="h-5 w-5" />
+          </div>
+        </div>
+
+        {/* Metric 2: Active Kitchen Prep */}
+        <div className="rounded-2xl border border-sky-200 bg-sky-50/70 p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase text-sky-800 tracking-wider">
+              In Kitchen Prep
+            </span>
+            <div className="font-display text-lg font-black text-sky-950 mt-0.5">
+              {processingOrdersList.length} <span className="text-xs font-normal text-sky-800">in prep</span>
+            </div>
+            <p className="text-[10px] text-sky-700 mt-0.5">
+              Avg Prep: <span className="font-mono font-bold">{formatDuration(avgProcessingTimeMs)}</span>
+            </p>
+          </div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-sky-600 text-white shadow-2xs">
+            <ChefHat className="h-5 w-5" />
+          </div>
+        </div>
+
+        {/* Metric 3: Avg Completed Turnaround */}
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase text-emerald-800 tracking-wider">
+              Avg Total Wait (Completed)
+            </span>
+            <div className="font-display text-lg font-black text-emerald-950 mt-0.5">
+              <span className="font-mono">{formatDuration(avgCompletedWaitMs)}</span>
+            </div>
+            <p className="text-[10px] text-emerald-700 mt-0.5">
+              {completedOrdersList.length} orders fulfilled today
+            </p>
+          </div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-600 text-white shadow-2xs">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+        </div>
+
+        {/* Metric 4: Live Clock Status */}
+        <div className="rounded-2xl border border-stone-200 bg-white p-3.5 shadow-2xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-extrabold uppercase text-stone-500 tracking-wider">
+              Live Kitchen Clock
+            </span>
+            <div className="font-mono text-base font-black text-stone-900 mt-0.5">
+              {new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            </div>
+            <p className="text-[10px] text-stone-500 mt-0.5 flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live auto-ticking timer
+            </p>
+          </div>
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-stone-900 text-white shadow-2xs">
+            <Timer className="h-5 w-5 text-amber-400" />
+          </div>
         </div>
       </div>
 
@@ -488,3 +772,4 @@ export const TicketManagement: React.FC<TicketManagementProps> = ({
     </div>
   );
 };
+

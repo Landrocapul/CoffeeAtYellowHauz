@@ -24,13 +24,16 @@ import {
   EyeOff,
   Bell,
   AlertTriangle,
+  Building,
+  Home,
+  Utensils,
 } from 'lucide-react';
 
 interface NavigationProps {
   appMode: 'customer' | 'staff';
   onSetAppMode: (mode: 'customer' | 'staff') => void;
-  customerTab: 'home' | 'menu' | 'reservation' | 'account';
-  onSetCustomerTab: (tab: 'home' | 'menu' | 'reservation' | 'account') => void;
+  customerTab: 'home' | 'menu' | 'reservation' | 'venue' | 'account';
+  onSetCustomerTab: (tab: 'home' | 'menu' | 'reservation' | 'venue' | 'account') => void;
   staffTab: 'pos' | 'tables' | 'tickets' | 'reports' | 'analytics' | 'inventory' | 'settings';
   onSetStaffTab: (tab: 'pos' | 'tables' | 'tickets' | 'reports' | 'analytics' | 'inventory' | 'settings') => void;
   activeStaff: User | null;
@@ -87,7 +90,9 @@ export const Navigation: React.FC<NavigationProps> = ({
         : customerTab === 'menu'
         ? 'Menu & Ordering'
         : customerTab === 'reservation'
-        ? 'Reservations'
+        ? 'Reserve Table'
+        : customerTab === 'venue'
+        ? 'Venue Rental'
         : 'My Account'
       : staffTab === 'pos'
       ? 'Register'
@@ -301,38 +306,52 @@ export const Navigation: React.FC<NavigationProps> = ({
               <nav className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
                 <button
                   onClick={() => onSetCustomerTab('home')}
-                  className={`rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition ${
+                  className={`flex items-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition ${
                     customerTab === 'home'
                       ? 'bg-amber-100 text-amber-900 font-extrabold'
                       : 'text-stone-700 hover:bg-stone-100'
                   }`}
                 >
-                  Home
+                  <Home className="h-4 w-4 text-amber-600" />
+                  <span>Home</span>
                 </button>
                 <button
                   onClick={() => onSetCustomerTab('menu')}
-                  className={`relative rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition ${
+                  className={`relative flex items-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition ${
                     customerTab === 'menu'
                       ? 'bg-amber-100 text-amber-900 font-extrabold'
                       : 'text-stone-700 hover:bg-stone-100'
                   }`}
                 >
+                  <Utensils className="h-4 w-4 text-amber-600" />
                   <span>Menu &amp; Ordering</span>
                   {cartCount > 0 && (
-                    <span className="ml-1.5 rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-stone-950">
+                    <span className="ml-1 rounded-full bg-amber-500 px-1.5 py-0.2 text-[10px] font-bold text-stone-950">
                       {cartCount}
                     </span>
                   )}
                 </button>
                 <button
                   onClick={() => onSetCustomerTab('reservation')}
-                  className={`rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition ${
+                  className={`flex items-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition ${
                     customerTab === 'reservation'
                       ? 'bg-amber-100 text-amber-900 font-extrabold'
                       : 'text-stone-700 hover:bg-stone-100'
                   }`}
                 >
-                  Reserve Table
+                  <Calendar className="h-4 w-4 text-amber-600" />
+                  <span>Reserve Table</span>
+                </button>
+                <button
+                  onClick={() => onSetCustomerTab('venue')}
+                  className={`flex items-center gap-1.5 rounded-xl px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold transition ${
+                    customerTab === 'venue'
+                      ? 'bg-amber-100 text-amber-900 font-extrabold'
+                      : 'text-stone-700 hover:bg-stone-100'
+                  }`}
+                >
+                  <Building className="h-4 w-4 text-amber-600" />
+                  <span>Venue Rental</span>
                 </button>
               </nav>
             ) : (

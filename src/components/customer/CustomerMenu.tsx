@@ -365,7 +365,7 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
               }}
               className={`flex items-center justify-center gap-1.5 rounded-full py-2 px-3 text-xs font-black transition-all duration-150 ${
                 categoryType === 'drinks'
-                  ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                  ? 'bg-amber-500 text-stone-950 shadow-xs'
                   : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
               }`}
             >
@@ -381,7 +381,7 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
               }}
               className={`flex items-center justify-center gap-1.5 rounded-full py-2 px-3 text-xs font-black transition-all duration-150 ${
                 categoryType === 'food'
-                  ? 'bg-[#f5a524] text-stone-950 shadow-xs'
+                  ? 'bg-amber-500 text-stone-950 shadow-xs'
                   : 'text-stone-400 hover:text-stone-700 hover:bg-stone-50'
               }`}
             >
@@ -397,7 +397,7 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
               onClick={() => setSelectedCategory('all')}
               className={`w-full flex items-center gap-3 text-left rounded-full px-4 py-2.5 sm:py-3 text-xs font-black transition-all duration-150 border ${
                 selectedCategory === 'all'
-                  ? 'bg-[#f5a524] text-stone-950 border-[#f5a524] shadow-xs'
+                  ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-xs'
                   : 'bg-white text-stone-900 border-stone-200 hover:bg-stone-50 hover:border-stone-300 shadow-2xs active:scale-[0.98]'
               }`}
             >
@@ -417,7 +417,7 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
                   onClick={() => setSelectedCategory(cat.id)}
                   className={`w-full flex items-center gap-3 text-left rounded-full px-4 py-2.5 sm:py-3 text-xs font-black transition-all duration-150 border ${
                     isSelected
-                      ? 'bg-[#f5a524] text-stone-950 border-[#f5a524] shadow-xs'
+                      ? 'bg-amber-500 text-stone-950 border-amber-500 shadow-xs'
                       : 'bg-white text-stone-900 border-stone-200 hover:bg-stone-50 hover:border-stone-300 shadow-2xs active:scale-[0.98]'
                   }`}
                 >
@@ -452,7 +452,7 @@ export const CustomerMenu: React.FC<CustomerMenuProps> = ({
               onClick={() => setSelectedTemp('hot')}
               className={`inline-flex items-center gap-1 rounded-full px-3.5 py-1 text-xs font-bold transition ${
                 selectedTemp === 'hot'
-                  ? 'bg-orange-600 text-white'
+                  ? 'bg-amber-700 text-white'
                   : 'bg-white border border-stone-200 text-stone-700 hover:bg-stone-50'
               }`}
             >

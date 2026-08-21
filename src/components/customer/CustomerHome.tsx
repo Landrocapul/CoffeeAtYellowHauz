@@ -1,13 +1,14 @@
 import React from 'react';
 import { MenuItem, StoreSettings } from '../../types';
-import { ShoppingBag, Calendar, Clock, Utensils, Heart, Sparkles, ArrowRight, ShieldCheck, MapPin, Phone, Images } from 'lucide-react';
-import { LandingGallery } from './LandingGallery';
+import { ShoppingBag, Calendar, Clock, Utensils, Heart, Sparkles, ArrowRight, ShieldCheck, MapPin, Phone } from 'lucide-react';
+import { InstagramFeed } from './InstagramFeed';
 
 interface CustomerHomeProps {
   bestSellers: MenuItem[];
   settings: StoreSettings;
   onNavigateMenu: () => void;
   onNavigateReservation: () => void;
+  onNavigateVenue?: () => void;
   onAddToCart: (item: MenuItem) => void;
 }
 
@@ -16,6 +17,7 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
   settings,
   onNavigateMenu,
   onNavigateReservation,
+  onNavigateVenue,
   onAddToCart,
 }) => {
   return (
@@ -31,7 +33,7 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
               Established 2007 • Davao City
             </span>
             <h1 className="mt-5 font-display text-3xl font-extrabold leading-[1.15] sm:text-5xl text-stone-50">
-              Coffee, breakfast &amp; comfort food made for lingering.
+              Coffee at Yellow Hauz
             </h1>
             <p className="mt-4 max-w-lg text-sm sm:text-base leading-relaxed text-stone-300">
               From our famous slow-crisped pork adobo flakes to freshly pulled artisan lattes, homemade cheesecakes, and specialty brews. Order ahead or reserve your table.
@@ -68,67 +70,80 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
             </div>
           </div>
 
-          {/* Hero Collage */}
+          {/* Hero Collage: 1 Hot Coffee, 1 Place, 1 Cold Drink, 1 Food */}
           <div className="grid grid-cols-2 gap-3.5 sm:gap-4">
             <div className="space-y-3.5">
+              {/* 1. Hot Coffee */}
               <div className="group relative aspect-square overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
                   src="/images/01_Hearts_Latte_Art.jpg"
-                  alt="Heart Latte Art"
+                  alt="Hot Coffee & Latte Art"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/latte.webp';
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Artisan Latte Art
+                  Artisan Hot Coffee
                 </div>
               </div>
+
+              {/* 2. The Place */}
               <div className="group relative aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
                   src="/images/18_Main_Counter_Interior.webp"
-                  alt="Main Espresso Counter"
+                  alt="Yellow Hauz Café Interior"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/latte.webp';
+                    (e.target as HTMLImageElement).src = '/images/20_Seating_Area.webp';
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Espresso Bar Counter
+                  Cozy Café Spaces
                 </div>
               </div>
             </div>
+
             <div className="space-y-3.5 pt-6">
+              {/* 3. Cold Drink */}
               <div className="group relative aspect-4/3 overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/19_Storefront_Night.webp"
-                  alt="Storefront Night Façade"
+                  src="/images/08_Cold_Brew.jpg"
+                  alt="Iced Cold Brew & Chilled Drinks"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src = '/images/icelatte.webp';
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Night Façade &amp; Garden
+                  Chilled Drinks &amp; Cold Brew
                 </div>
               </div>
+
+              {/* 4. Food */}
               <div className="group relative aspect-square overflow-hidden rounded-2xl bg-stone-800 border border-stone-800 shadow-md">
                 <img
-                  src="/images/22_Outdoor_Seating.webp"
-                  alt="Garden Patio Seating"
+                  src="/images/grilledgarliccheese.webp"
+                  alt="Fresh Gourmet Food & Pastries"
                   className="h-full w-full object-cover hover:scale-105 transition duration-300"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/images/milkshake.webp';
+                    (e.target as HTMLImageElement).src = '/images/blueberrycheesecake.webp';
                   }}
                 />
                 <div className="absolute bottom-2 left-2 rounded-md bg-stone-950/70 backdrop-blur-xs px-2 py-0.5 text-[9px] font-bold text-amber-300">
-                  Al Fresco Patio
+                  Handcrafted Food &amp; Pastries
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Official Shop Instagram Posts Section (Images 1 - 16 Mosaic) */}
+      <InstagramFeed
+        onNavigateMenu={onNavigateMenu}
+        onNavigateReservation={onNavigateReservation}
+      />
 
       {/* Info Strip */}
       <section className="grid gap-4 sm:grid-cols-3">
@@ -172,11 +187,73 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
         </div>
       </section>
 
-      {/* Landing Gallery Component (All 17 Images) */}
-      <LandingGallery
-        onNavigateMenu={onNavigateMenu}
-        onNavigateReservation={onNavigateReservation}
-      />
+      {/* Private Venue Reservation Callout */}
+      <section className="overflow-hidden rounded-3xl border border-amber-300 bg-gradient-to-br from-stone-950 via-stone-900 to-amber-950 text-white shadow-xl">
+        <div className="grid gap-6 p-6 sm:p-10 lg:grid-cols-[1.2fr_.8fr] lg:items-center">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-xs font-black uppercase tracking-wider text-stone-950 shadow-xs">
+                <Sparkles className="h-3.5 w-3.5" />
+                Exclusive Venue Space
+              </span>
+              <span className="rounded-full bg-stone-800 border border-stone-700 px-3 py-1 text-xs font-bold text-amber-300">
+                Only 1 Studio Place on Premises
+              </span>
+            </div>
+
+            <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-white leading-tight">
+              Host Your Next Event at The Yellow Hauz Private Studio
+            </h2>
+
+            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed max-w-xl">
+              Ideal for private meetings, creative workshops, birthdays, study reviews, and intimate celebrations. Equipped with fiber Wi-Fi, split air-con, sound system, and HD presentation setup.
+            </p>
+
+            <div className="flex flex-wrap items-baseline gap-3 pt-1">
+              <div className="inline-flex items-baseline gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/30 px-4 py-2">
+                <span className="font-mono text-2xl sm:text-3xl font-black text-amber-400">₱300.00</span>
+                <span className="text-xs font-bold text-stone-200">for 3 Full Hours</span>
+                <span className="text-[11px] text-stone-400">• (+₱100/extra hr)</span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={onNavigateVenue || onNavigateReservation}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-6 py-3 text-xs sm:text-sm font-extrabold text-stone-950 shadow-lg shadow-amber-500/20 hover:bg-amber-400 transition transform active:scale-95"
+              >
+                <Calendar className="h-4 w-4" />
+                Book Private Venue
+              </button>
+              <button
+                type="button"
+                onClick={onNavigateReservation}
+                className="inline-flex items-center gap-2 rounded-xl border border-stone-700 bg-stone-800/80 px-5 py-3 text-xs sm:text-sm font-bold text-stone-200 hover:bg-stone-800 transition"
+              >
+                <Utensils className="h-4 w-4" />
+                Reserve Dining Table
+              </button>
+            </div>
+          </div>
+
+          <div className="relative aspect-16/10 sm:aspect-4/3 overflow-hidden rounded-2xl border border-stone-700 bg-stone-800 shadow-lg">
+            <img
+              src="/images/24_Modern_Cafe_Design.webp"
+              alt="Yellow Hauz Private Studio Venue"
+              className="h-full w-full object-cover hover:scale-105 transition duration-500"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/images/28_Seating_Arrangement.webp';
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute bottom-3 left-3 right-3 text-white">
+              <span className="text-xs font-bold text-amber-400 block">Airconditioned Studio Wing</span>
+              <span className="text-[11px] text-stone-300">Up to 25 Guests • Custom Seating Layouts</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Best Sellers Showcase */}
       <section className="space-y-6">
@@ -255,7 +332,7 @@ export const CustomerHome: React.FC<CustomerHomeProps> = ({
       </section>
 
       {/* Time-Based Menus Highlights */}
-      <section className="rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-50/60 to-orange-50/40 p-6 sm:p-8">
+      <section className="rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-50/80 to-stone-100/60 p-6 sm:p-8">
         <div className="max-w-2xl">
           <span className="text-[11px] font-bold uppercase tracking-widest text-amber-800">
             Daily Kitchen Highlights

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Order, StoreSettings } from '../../types';
 import { AppStore } from '../../services/store';
 import {
@@ -36,7 +36,15 @@ interface SalesReportsProps {
 type DatePreset = 'today' | 'yesterday' | 'week' | 'month' | 'custom' | 'all';
 
 export const SalesReports: React.FC<SalesReportsProps> = ({ settings, onViewReceipt }) => {
-  const orders = useMemo(() => AppStore.getOrders(), []);
+  const [orders, setOrders] = useState<Order[]>(() => AppStore.getOrders());
+
+  useEffect(() => {
+    setOrders(AppStore.getOrders());
+    const unsub = AppStore.subscribe(() => {
+      setOrders(AppStore.getOrders());
+    });
+    return () => unsub();
+  }, []);
 
   // Helper date utilities
   const formatDateForInput = (d: Date) => {

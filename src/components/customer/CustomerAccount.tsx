@@ -100,7 +100,7 @@ export const CustomerAccountView: React.FC<CustomerAccountProps> = ({
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-amber-600" />
               <h2 className="font-display text-lg font-bold text-stone-900">
-                Your Table Bookings ({customerReservations.length})
+                Your Bookings &amp; Events ({customerReservations.length})
               </h2>
             </div>
           </div>
@@ -111,64 +111,90 @@ export const CustomerAccountView: React.FC<CustomerAccountProps> = ({
             </div>
           ) : (
             <div className="space-y-3">
-              {customerReservations.map((res) => (
-                <div
-                  key={res.id}
-                  className="rounded-2xl border border-stone-200 bg-white p-4 shadow-xs space-y-2 text-xs"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                      {res.reservationCode}
-                    </span>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
-                        res.status === 'confirmed'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : res.status === 'pending'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-stone-100 text-stone-600'
-                      }`}
-                    >
-                      {res.status}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-stone-600 pt-1">
-                    <div>
-                      <span className="text-stone-400 block">Table:</span>
-                      <span className="font-bold text-stone-800">
-                        Table #{res.tableNumber} ({res.guestCount} Guests)
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-stone-400 block">Date &amp; Time:</span>
-                      <span className="font-bold text-stone-800">
-                        {new Date(res.reservationAt).toLocaleString('en-PH', {
-                          dateStyle: 'medium',
-                          timeStyle: 'short',
-                        })}
-                      </span>
-                    </div>
-                  </div>
-
-                  {res.notes && (
-                    <p className="text-stone-500 italic pt-1 border-t border-stone-100">
-                      "{res.notes}"
-                    </p>
-                  )}
-
-                  {res.status === 'pending' && (
-                    <div className="pt-2 border-t border-stone-100 flex justify-end">
-                      <button
-                        onClick={() => handleCancelReservation(res.id)}
-                        className="text-xs font-bold text-rose-600 hover:text-rose-700"
+              {customerReservations.map((res) => {
+                const isVenue = res.bookingType === 'venue';
+                return (
+                  <div
+                    key={res.id}
+                    className={`rounded-2xl border bg-white p-4 shadow-xs space-y-2 text-xs ${
+                      isVenue ? 'border-amber-300 ring-1 ring-amber-400/20' : 'border-stone-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                          {res.reservationCode}
+                        </span>
+                        {isVenue && (
+                          <span className="rounded-full bg-stone-900 text-amber-300 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider">
+                            🏢 Private Studio Venue
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
+                          res.status === 'confirmed'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : res.status === 'pending'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-stone-100 text-stone-600'
+                        }`}
                       >
-                        Cancel Booking
-                      </button>
+                        {res.status}
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    <div className="grid grid-cols-2 gap-2 text-stone-600 pt-1">
+                      <div>
+                        <span className="text-stone-400 block">
+                          {isVenue ? 'Venue Space & Guests:' : 'Table:'}
+                        </span>
+                        <span className="font-bold text-stone-800">
+                          {isVenue
+                            ? `Private Studio (${res.guestCount} Guests)`
+                            : `Table #${res.tableNumber} (${res.guestCount} Guests)`}
+                        </span>
+                        {isVenue && res.eventType && (
+                          <span className="text-[10px] text-stone-500 block truncate">
+                            {res.eventType}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-stone-400 block">Date &amp; Schedule:</span>
+                        <span className="font-bold text-stone-800">
+                          {new Date(res.reservationAt).toLocaleString('en-PH', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </span>
+                        {isVenue && (
+                          <span className="text-[10px] font-bold text-amber-800 block">
+                            {res.venueDurationHours || 3} Hours • ₱{(res.totalAmount || 300).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {res.notes && (
+                      <p className="text-stone-500 italic pt-1 border-t border-stone-100">
+                        "{res.notes}"
+                      </p>
+                    )}
+
+                    {res.status === 'pending' && (
+                      <div className="pt-2 border-t border-stone-100 flex justify-end">
+                        <button
+                          onClick={() => handleCancelReservation(res.id)}
+                          className="text-xs font-bold text-rose-600 hover:text-rose-700"
+                        >
+                          Cancel Booking
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

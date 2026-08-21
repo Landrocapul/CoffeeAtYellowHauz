@@ -628,7 +628,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
                 }}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-extrabold transition-all duration-150 cursor-pointer ${
                   categoryType === 'drinks'
-                    ? 'bg-[#f5b82e] text-stone-950 shadow-xs'
+                    ? 'bg-amber-500 text-stone-950 shadow-xs'
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                 }`}
               >
@@ -651,7 +651,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
                 }}
                 className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-extrabold transition-all duration-150 cursor-pointer ${
                   categoryType === 'food'
-                    ? 'bg-[#f5b82e] text-stone-950 shadow-xs'
+                    ? 'bg-amber-500 text-stone-950 shadow-xs'
                     : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                 }`}
               >
@@ -674,7 +674,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
                 }}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all duration-150 cursor-pointer ${
                   categoryType === 'all'
-                    ? 'bg-[#f5b82e] text-stone-950 shadow-xs font-extrabold'
+                    ? 'bg-amber-500 text-stone-950 shadow-xs font-extrabold'
                     : 'text-stone-500 hover:text-stone-900 hover:bg-stone-50'
                 }`}
               >
@@ -973,7 +973,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
                   onClick={() => setCatFilterType('all')}
                   className={`px-3 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${
                     catFilterType === 'all'
-                      ? 'bg-[#f5b82e] text-stone-950 shadow-xs'
+                      ? 'bg-amber-500 text-stone-950 shadow-xs'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                   }`}
                 >
@@ -984,7 +984,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
                   onClick={() => setCatFilterType('drinks')}
                   className={`flex items-center gap-1 px-3 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${
                     catFilterType === 'drinks'
-                      ? 'bg-[#f5b82e] text-stone-950 shadow-xs'
+                      ? 'bg-amber-500 text-stone-950 shadow-xs'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                   }`}
                 >
@@ -996,7 +996,7 @@ export const InventoryManager: React.FC<InventoryManagerProps> = ({ categories: 
                   onClick={() => setCatFilterType('food')}
                   className={`flex items-center gap-1 px-3 py-1.5 text-xs font-extrabold rounded-lg transition cursor-pointer ${
                     catFilterType === 'food'
-                      ? 'bg-[#f5b82e] text-stone-950 shadow-xs'
+                      ? 'bg-amber-500 text-stone-950 shadow-xs'
                       : 'text-stone-600 hover:text-stone-900 hover:bg-stone-50'
                   }`}
                 >
